@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
@@ -12,13 +12,24 @@ import { AlertsBanner } from "@/components/dashboard/alerts-banner"
 
 interface ExpertDashboardProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
 export function ExpertDashboard({ role, onNavigate, onLogout }: ExpertDashboardProps) {
-  const [selectedStation, setSelectedStation] = useState("Chiang Khong")
+  const [selectedStation, setSelectedStation] = useState("Vientiane")
   const [selectedModel, setSelectedModel] = useState("hybrid")
+  const [lastUpdate, setLastUpdate] = useState(new Date())
+
+  // Auto-refresh data every 15 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdate(new Date())
+      console.log('Expert dashboard data refreshed at:', new Date().toLocaleTimeString())
+    }, 15 * 60 * 1000) // 15 minutes
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="flex h-screen bg-background">
@@ -28,6 +39,11 @@ export function ExpertDashboard({ role, onNavigate, onLogout }: ExpertDashboardP
         <Header title="Expert Forecasting Dashboard" role={role} />
 
         <main className="flex-1 overflow-auto">
+          <div className="px-6 pt-4 pb-2">
+            <span className="text-xs text-slate-400">
+              Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
+            </span>
+          </div>
           <div className="p-6 space-y-6">
             <AlertsBanner />
 

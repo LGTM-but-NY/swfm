@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Plus, Edit2, Trash2, AlertCircle, Settings } from "lucide-react"
 
 interface DataManagementPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
@@ -29,8 +29,8 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
       id: "1",
       date: "2024-11-05",
       time: "10:30",
-      station: "Chiang Khong",
-      value: 2.45,
+      station: "Jinghong",
+      value: 3.21,
       unit: "meters",
       source: "automated",
       status: "verified",
@@ -39,8 +39,18 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
       id: "2",
       date: "2024-11-05",
       time: "09:15",
+      station: "Chiang Saen",
+      value: 3.52,
+      unit: "meters",
+      source: "automated",
+      status: "verified",
+    },
+    {
+      id: "3",
+      date: "2024-11-05",
+      time: "08:45",
       station: "Vientiane",
-      value: 4.12,
+      value: 3.85,
       unit: "meters",
       source: "automated",
       status: "verified",
@@ -72,12 +82,12 @@ export function DataManagementPage({ onNavigate, onLogout }: DataManagementPageP
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     time: "12:00",
-    station: "Chiang Khong",
+    station: "Jinghong",
     value: "",
     unit: "meters",
   })
 
-  const stations = ["Chiang Khong", "Vientiane", "Nakhon Phanom", "Mukdahan", "Pakse", "Kratie"]
+  const stations = ["Jinghong", "Chiang Saen", "Luang Prabang", "Vientiane", "Pakse", "Stung Treng", "Kratie", "Tan Chau", "Châu Đốc"]
 
   const handleAddRecord = () => {
     if (formData.date && formData.time && formData.station && formData.value) {
