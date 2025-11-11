@@ -21,7 +21,7 @@ const generateMockData = (days: number) => {
     date.setDate(date.getDate() - i)
     
     data.push({
-      time: date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' }),
+      time: date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }),
       actual: Math.round((2 + Math.sin(i * 0.5) * 0.5 + Math.random() * 0.3) * 100) / 100,
       forecast: null, // No forecast for past data
       isToday: false
@@ -42,7 +42,7 @@ const generateMockData = (days: number) => {
     date.setDate(date.getDate() + i)
     
     data.push({
-      time: date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' }),
+      time: date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }),
       actual: null, // No actual data for future
       forecast: Math.round((2.3 + Math.sin(i * 0.3) * 0.4 + Math.random() * 0.2) * 100) / 100,
       isToday: false

@@ -13,6 +13,7 @@ const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapCo
 })
 
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false })
+const WMSTileLayer = dynamic(() => import('react-leaflet').then(mod => mod.WMSTileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
 
@@ -40,9 +41,11 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
     if (typeof window !== 'undefined') {
       const L = require('leaflet')
       delete (L.Icon.Default.prototype as any)._getIconUrl
+      
+      // Custom green icon for Mekong stations
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
       })
     }
@@ -59,14 +62,27 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
   return (
     <div className="w-full h-[500px] rounded-lg overflow-hidden">
       <MapContainer
-        center={[10.8231, 106.6297]} // Ho Chi Minh City
-        zoom={10}
+        center={[16.0, 104.0]} // Center on Mekong region
+        zoom={6}
         style={{ height: '100%', width: '100%' }}
         className="rounded-lg"
       >
+        {/* Google Maps Satellite Hybrid Layer */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+          url="http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}"
+        />
+        
+        {/* Mekong River WMS Layer from GeoServer */}
+        <WMSTileLayer
+          url="http://103.77.166.185:8080/geoserver/ne/wms"
+          params={{
+            layers: 'ne:mekong_river',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.0',
+          }}
+          attribution='&copy; <a href="http://103.77.166.185:8080/geoserver">GeoServer</a>'
         />
         
         {stations.map((station) => (
@@ -77,23 +93,7 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
               click: () => onStationClick?.(station)
             }}
           >
-            {/* <Popup>
-              <div className="p-2">
-                <h3 className="font-bold text-sm">{station.name}</h3>
-                <p className="text-xs text-gray-600">
-                  Water Level: {station.waterLevel}m
-                </p>
-                <span 
-                  className={`text-xs px-2 py-1 rounded ${
-                    station.status === 'critical' ? 'bg-red-100 text-red-600' :
-                    station.status === 'warning' ? 'bg-yellow-100 text-yellow-600' :
-                    'bg-green-100 text-green-600'
-                  }`}
-                >
-                  {station.status.toUpperCase()}
-                </span>
-              </div>
-            </Popup> */}
+            
           </Marker>
         ))}
       </MapContainer>

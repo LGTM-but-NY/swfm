@@ -10,12 +10,12 @@ import { AlertCircle, Save, RotateCcw } from "lucide-react"
 
 interface TuneParametersPageProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
 export function TuneParametersPage({ role, onNavigate, onLogout }: TuneParametersPageProps) {
-  const [selectedStation, setSelectedStation] = useState("Chiang Khong")
+  const [selectedStation, setSelectedStation] = useState("Vientiane")
   const [selectedModel, setSelectedModel] = useState("arima")
   const [parameters, setParameters] = useState({
     p: 2,

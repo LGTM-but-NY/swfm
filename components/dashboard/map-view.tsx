@@ -6,10 +6,15 @@ interface MapViewProps {
 
 export function MapView({ onStationSelect }: MapViewProps) {
   const stations = [
-    { name: "Chiang Khong", lat: 20.27, lon: 100.45 },
-    { name: "Nong Khai", lat: 17.88, lon: 102.74 },
-    { name: "Vientiane", lat: 17.97, lon: 102.63 },
-    { name: "Pakse", lat: 15.12, lon: 105.81 },
+    { name: "Jinghong", lat: 22.02, lon: 100.79 },
+    { name: "Chiang Saen", lat: 20.27, lon: 100.08 },
+    { name: "Luang Prabang", lat: 19.88, lon: 102.14 },
+    { name: "Vientiane", lat: 17.97, lon: 102.61 },
+    { name: "Pakse", lat: 15.12, lon: 105.80 },
+    { name: "Stung Treng", lat: 13.57, lon: 105.97 },
+    { name: "Kratie", lat: 12.49, lon: 106.02 },
+    { name: "Tan Chau", lat: 10.78, lon: 105.24 },
+    { name: "Châu Đốc", lat: 10.70, lon: 105.05 },
   ]
 
   return (

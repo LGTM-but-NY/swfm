@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Settings, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react"
 
 interface PreprocessingConfigPageProps {
-  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map") => void
+  onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
@@ -109,7 +109,7 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
         },
         referenceStation: {
           label: "Reference Station",
-          value: "Chiang Khong",
+          value: "Jinghong",
         },
       },
     },
@@ -368,11 +368,15 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
                               )}
                               {key === "referenceStation" && (
                                 <>
-                                  <option value="Chiang Khong">Chiang Khong</option>
+                                  <option value="Jinghong">Jinghong</option>
+                                  <option value="Chiang Saen">Chiang Saen</option>
+                                  <option value="Luang Prabang">Luang Prabang</option>
                                   <option value="Vientiane">Vientiane</option>
-                                  <option value="Nakhon Phanom">Nakhon Phanom</option>
-                                  <option value="Mukdahan">Mukdahan</option>
                                   <option value="Pakse">Pakse</option>
+                                  <option value="Stung Treng">Stung Treng</option>
+                                  <option value="Kratie">Kratie</option>
+                                  <option value="Tan Chau">Tan Chau</option>
+                                  <option value="Châu Đốc">Châu Đốc</option>
                                 </>
                               )}
                               {key === "timezone" && (

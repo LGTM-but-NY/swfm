@@ -11,10 +11,11 @@ import { UserManagementPage } from "@/components/pages/user-management"
 import { DataManagementPage } from "@/components/pages/data-management"
 import { PreprocessingConfigPage } from "@/components/pages/preprocessing-config"
 import { MapDashboard } from "@/components/pages/map-dashboard"
+import { RegressionAnalysisPage } from "@/components/pages/regression-analysis"
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<
-    "login" | "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map"
+    "login" | "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression"
   >("login")
   const [userRole, setUserRole] = useState<"guest" | "expert" | "admin">("guest")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -31,7 +32,7 @@ export default function Home() {
   }
 
   const handleNavigate = (
-    page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map",
+    page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression",
   ) => {
     setCurrentPage(page)
   }
@@ -56,6 +57,9 @@ export default function Home() {
       )}
       {currentPage === "evaluation" && userRole !== "guest" && (
         <ModelEvaluationPage role={userRole} onNavigate={handleNavigate} onLogout={handleLogout} />
+      )}
+      {currentPage === "regression" && userRole !== "guest" && (
+        <RegressionAnalysisPage role={userRole} onNavigate={handleNavigate} onLogout={handleLogout} />
       )}
       {currentPage === "admin" && userRole === "admin" && (
         <AdminDashboard onNavigate={handleNavigate} onLogout={handleLogout} />
