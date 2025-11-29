@@ -40,9 +40,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/expert",
       icon: Zap,
       items: [
-        { title: "Advanced Modeling", url: "/expert" },
         { title: "Tune Parameters", url: "/expert/tune" },
-        { title: "Model Evaluation", url: "/expert/evaluation" },
+        { title: "Model Evaluation", url: "/evaluation" },
+        { title: "Preprocessing", url: "/preprocessing" },
       ],
     },
     {
@@ -53,8 +53,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "General", url: "/admin" },
         { title: "User Management", url: "/admin/users" },
         { title: "Data Management", url: "/admin/data" },
-        { title: "Preprocessing", url: "/admin/preprocessing" },
-        { title: "Model Evaluation", url: "/admin/evaluation" },
+        { title: "Preprocessing", url: "/preprocessing" },
+        { title: "Model Evaluation", url: "/evaluation" },
       ],
     }
   ]
