@@ -11,7 +11,7 @@ interface StationDetailModalProps {
     id: number
     name: string
     lat: number
-    lng: number
+    lon: number
     waterLevel: number
     status: 'normal' | 'warning' | 'critical'
   } | null
@@ -30,7 +30,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-white truncate">{station.name}</h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Coordinates: {station.lat.toFixed(4)}, {station.lng.toFixed(4)}
+              Coordinates: {station.lat.toFixed(4)}, {station.lon.toFixed(4)}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 ml-2 hover:bg-slate-800">

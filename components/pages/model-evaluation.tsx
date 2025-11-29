@@ -1,19 +1,31 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { EvaluationMetrics } from "@/components/evaluation/evaluation-metrics"
 import { AccuracyChart } from "@/components/evaluation/accuracy-chart"
 import { ErrorDistribution } from "@/components/evaluation/error-distribution"
+import { getEvaluationMetrics } from "@/app/actions/analysis-actions"
 
 interface ModelEvaluationPageProps {
   role: "expert" | "admin"
-  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map") => void
+  onNavigate: (page: "guest" | "expert" | "evaluation" | "admin" | "tune" | "users" | "data" | "preprocessing" | "map" | "regression") => void
   onLogout: () => void
 }
 
 export function ModelEvaluationPage({ role, onNavigate, onLogout }: ModelEvaluationPageProps) {
+  const [metrics, setMetrics] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      const data = await getEvaluationMetrics()
+      setMetrics(data || [])
+    }
+    fetchMetrics()
+  }, [])
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar currentPage="evaluation" role={role} onNavigate={onNavigate} onLogout={onLogout} />
@@ -73,23 +85,27 @@ export function ModelEvaluationPage({ role, onNavigate, onLogout }: ModelEvaluat
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        { name: "Hybrid Model", rmse: "0.234", mae: "0.156", r2: "0.94", accuracy: "94.2%" },
-                        { name: "LSTM Model", rmse: "0.267", mae: "0.189", r2: "0.91", accuracy: "91.5%" },
-                        { name: "Statistical", rmse: "0.312", mae: "0.245", r2: "0.87", accuracy: "87.8%" },
-                      ].map((model) => (
-                        <tr key={model.name} className="border-b border-slate-700 hover:bg-slate-700/50">
-                          <td className="py-3 px-4 text-slate-100 font-medium">{model.name}</td>
-                          <td className="text-center py-3 px-4 text-slate-300">{model.rmse}</td>
-                          <td className="text-center py-3 px-4 text-slate-300">{model.mae}</td>
-                          <td className="text-center py-3 px-4 text-slate-300">{model.r2}</td>
-                          <td className="text-center py-3 px-4">
-                            <span className="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-medium">
-                              {model.accuracy}
-                            </span>
+                      {metrics.length > 0 ? (
+                        metrics.map((model) => (
+                          <tr key={model.id} className="border-b border-slate-700 hover:bg-slate-700/50">
+                            <td className="py-3 px-4 text-slate-100 font-medium">{model.model_type}</td>
+                            <td className="text-center py-3 px-4 text-slate-300">{model.rmse?.toFixed(3)}</td>
+                            <td className="text-center py-3 px-4 text-slate-300">{model.mae?.toFixed(3)}</td>
+                            <td className="text-center py-3 px-4 text-slate-300">{model.r2?.toFixed(2)}</td>
+                            <td className="text-center py-3 px-4">
+                              <span className="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-medium">
+                                {((1 - (model.mape || 0)) * 100).toFixed(1)}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-4 text-center text-slate-400">
+                            No performance data available
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>

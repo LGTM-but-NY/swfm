@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { MapView } from "@/components/dashboard/map-view"
-import { AlertCircle, Save, RotateCcw } from "lucide-react"
+import { AlertCircle, Save, RotateCcw, Loader2 } from "lucide-react"
+import { getModelConfig, saveModelConfig } from "@/app/actions/model-actions"
+import { toast } from "sonner"
 
 interface TuneParametersPageProps {
   role: "expert" | "admin"
@@ -27,7 +29,7 @@ export function TuneParametersPage({ role, onNavigate, onLogout }: TuneParameter
     epochs: 100,
     batchSize: 32,
   })
-  const [saved, setSaved] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   const modelConfigs: Record<string, { label: string; params: string[] }> = {
     arima: {
@@ -44,14 +46,39 @@ export function TuneParametersPage({ role, onNavigate, onLogout }: TuneParameter
     },
   }
 
+  useEffect(() => {
+    loadConfig()
+  }, [selectedStation, selectedModel])
+
+  const loadConfig = async () => {
+    try {
+      const config = await getModelConfig(selectedStation, selectedModel)
+      if (config) {
+        setParameters(prev => ({ ...prev, ...config }))
+      } else {
+        // Reset to defaults if no config found
+        handleReset()
+      }
+    } catch (error) {
+      console.error("Error loading config:", error)
+      toast.error("Failed to load configuration")
+    }
+  }
+
   const handleParameterChange = (param: string, value: number | boolean) => {
     setParameters({ ...parameters, [param]: value })
-    setSaved(false)
   }
 
   const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    startTransition(async () => {
+      try {
+        await saveModelConfig(selectedStation, selectedModel, parameters)
+        toast.success("Parameters saved successfully")
+      } catch (error) {
+        console.error("Error saving config:", error)
+        toast.error("Failed to save parameters")
+      }
+    })
   }
 
   const handleReset = () => {
@@ -287,9 +314,13 @@ export function TuneParametersPage({ role, onNavigate, onLogout }: TuneParameter
 
                     {/* Action Buttons */}
                     <div className="pt-4 space-y-2 border-t border-slate-700">
-                      <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Parameters
+                      <Button 
+                        onClick={handleSave} 
+                        disabled={isPending}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        {isPending ? "Saving..." : "Save Parameters"}
                       </Button>
                       <Button
                         onClick={handleReset}
@@ -300,12 +331,6 @@ export function TuneParametersPage({ role, onNavigate, onLogout }: TuneParameter
                         Reset to Default
                       </Button>
                     </div>
-
-                    {saved && (
-                      <div className="bg-green-900/30 border border-green-700 rounded p-2 text-center">
-                        <p className="text-xs text-green-300 font-medium">Parameters saved successfully</p>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>

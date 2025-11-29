@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/providers/auth-provider"
 import { GuestDashboard } from "@/components/pages/guest-dashboard"
 import { ExpertDashboard } from "@/components/pages/expert-dashboard"
 import { TuneParametersPage } from "@/components/pages/tune-parameters"

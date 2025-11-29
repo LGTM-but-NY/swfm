@@ -21,7 +21,8 @@ interface WaterStation {
   id: number
   name: string
   lat: number
-  lng: number
+  lon: number
+  country: string
   waterLevel: number
   status: 'normal' | 'warning' | 'critical'
 }
@@ -88,7 +89,7 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
         {stations.map((station) => (
           <Marker
             key={station.id}
-            position={[station.lat, station.lng]}
+            position={[station.lat, station.lon]}
             eventHandlers={{
               click: () => onStationClick?.(station)
             }}

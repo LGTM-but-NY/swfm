@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
-import { Settings, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react"
+import { Settings, AlertCircle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react"
+import { getPreprocessingConfigs, savePreprocessingConfig } from "@/app/actions/model-actions"
+import { toast } from "sonner"
 
 interface PreprocessingConfigPageProps {
   onNavigate: (page: "guest" | "expert" | "tune" | "evaluation" | "admin" | "users" | "data" | "preprocessing" | "map" | "regression") => void
@@ -20,159 +22,112 @@ interface PreprocessingMethod {
   parameters: Record<string, { label: string; value: number | string; min?: number; max?: number; step?: number }>
 }
 
-export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingConfigPageProps) {
-  const [methods, setMethods] = useState<PreprocessingMethod[]>([
-    {
-      id: "outlier",
-      name: "Outlier Detection & Removal",
-      enabled: true,
-      description: "Detect and handle anomalous data points using statistical methods",
-      parameters: {
-        method: {
-          label: "Detection Method",
-          value: "iqr",
-        },
-        threshold: {
-          label: "Sensitivity (σ)",
-          value: 3,
-          min: 1,
-          max: 5,
-          step: 0.5,
-        },
-        action: {
-          label: "Action on Outlier",
-          value: "interpolate",
-        },
-      },
+const defaultMethods: PreprocessingMethod[] = [
+  {
+    id: "outlier",
+    name: "Outlier Detection & Removal",
+    enabled: true,
+    description: "Detect and handle anomalous data points using statistical methods",
+    parameters: {
+      method: { label: "Detection Method", value: "iqr" },
+      threshold: { label: "Sensitivity (σ)", value: 3, min: 1, max: 5, step: 0.5 },
+      action: { label: "Action on Outlier", value: "interpolate" },
     },
-    {
-      id: "missing",
-      name: "Missing Data Handling",
-      enabled: true,
-      description: "Fill or remove records with missing values",
-      parameters: {
-        maxGapHours: {
-          label: "Max Gap (hours)",
-          value: 24,
-          min: 1,
-          max: 168,
-          step: 1,
-        },
-        method: {
-          label: "Fill Method",
-          value: "linear-interpolation",
-        },
-        removePercentage: {
-          label: "Remove if >% missing",
-          value: 30,
-          min: 5,
-          max: 100,
-          step: 5,
-        },
-      },
+  },
+  {
+    id: "missing",
+    name: "Missing Data Handling",
+    enabled: true,
+    description: "Fill or remove records with missing values",
+    parameters: {
+      maxGapHours: { label: "Max Gap (hours)", value: 24, min: 1, max: 168, step: 1 },
+      method: { label: "Fill Method", value: "linear-interpolation" },
+      removePercentage: { label: "Remove if >% missing", value: 30, min: 5, max: 100, step: 5 },
     },
-    {
-      id: "smoothing",
-      name: "Data Smoothing",
-      enabled: true,
-      description: "Apply temporal smoothing to reduce noise",
-      parameters: {
-        method: {
-          label: "Smoothing Method",
-          value: "moving-average",
-        },
-        windowSize: {
-          label: "Window Size (hours)",
-          value: 3,
-          min: 1,
-          max: 12,
-          step: 1,
-        },
-        weight: {
-          label: "Smoothing Factor",
-          value: 0.5,
-          min: 0,
-          max: 1,
-          step: 0.1,
-        },
-      },
+  },
+  {
+    id: "smoothing",
+    name: "Data Smoothing",
+    enabled: true,
+    description: "Apply temporal smoothing to reduce noise",
+    parameters: {
+      method: { label: "Smoothing Method", value: "moving-average" },
+      windowSize: { label: "Window Size (hours)", value: 3, min: 1, max: 12, step: 1 },
+      weight: { label: "Smoothing Factor", value: 0.5, min: 0, max: 1, step: 0.1 },
     },
-    {
-      id: "normalization",
-      name: "Data Normalization",
-      enabled: true,
-      description: "Standardize values to consistent scale",
-      parameters: {
-        method: {
-          label: "Normalization Method",
-          value: "z-score",
-        },
-        referenceStation: {
-          label: "Reference Station",
-          value: "Jinghong",
-        },
-      },
+  },
+  {
+    id: "normalization",
+    name: "Data Normalization",
+    enabled: true,
+    description: "Standardize values to consistent scale",
+    parameters: {
+      method: { label: "Normalization Method", value: "z-score" },
+      referenceStation: { label: "Reference Station", value: "Jinghong" },
     },
-    {
-      id: "validation",
-      name: "Data Validation Rules",
-      enabled: true,
-      description: "Apply domain-specific validation constraints",
-      parameters: {
-        minValue: {
-          label: "Minimum Value (meters)",
-          value: 0.5,
-          min: 0,
-          max: 5,
-          step: 0.1,
-        },
-        maxValue: {
-          label: "Maximum Value (meters)",
-          value: 15,
-          min: 10,
-          max: 20,
-          step: 0.5,
-        },
-        maxChangeRate: {
-          label: "Max Change Rate (m/hour)",
-          value: 0.5,
-          min: 0.1,
-          max: 2,
-          step: 0.1,
-        },
-      },
+  },
+  {
+    id: "validation",
+    name: "Data Validation Rules",
+    enabled: true,
+    description: "Apply domain-specific validation constraints",
+    parameters: {
+      minValue: { label: "Minimum Value (meters)", value: 0.5, min: 0, max: 5, step: 0.1 },
+      maxValue: { label: "Maximum Value (meters)", value: 15, min: 10, max: 20, step: 0.5 },
+      maxChangeRate: { label: "Max Change Rate (m/hour)", value: 0.5, min: 0.1, max: 2, step: 0.1 },
     },
-    {
-      id: "timestamp",
-      name: "Timestamp Standardization",
-      enabled: true,
-      description: "Ensure consistent timestamp format and timezone",
-      parameters: {
-        timezone: {
-          label: "Timezone",
-          value: "UTC+7",
-        },
-        format: {
-          label: "Format",
-          value: "ISO8601",
-        },
-        alignmentInterval: {
-          label: "Alignment Interval (minutes)",
-          value: 15,
-          min: 5,
-          max: 60,
-          step: 5,
-        },
-      },
+  },
+  {
+    id: "timestamp",
+    name: "Timestamp Standardization",
+    enabled: true,
+    description: "Ensure consistent timestamp format and timezone",
+    parameters: {
+      timezone: { label: "Timezone", value: "UTC+7" },
+      format: { label: "Format", value: "ISO8601" },
+      alignmentInterval: { label: "Alignment Interval (minutes)", value: 15, min: 5, max: 60, step: 5 },
     },
-  ])
+  },
+]
 
+export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingConfigPageProps) {
+  const [methods, setMethods] = useState<PreprocessingMethod[]>(defaultMethods)
   const [expandedMethod, setExpandedMethod] = useState<string | null>("outlier")
-  const [saved, setSaved] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    loadConfigs()
+  }, [])
+
+  const loadConfigs = async () => {
+    try {
+      const configs = await getPreprocessingConfigs()
+      if (configs && configs.length > 0) {
+        // Merge loaded configs with default structure
+        const updatedMethods = defaultMethods.map(method => {
+          const savedConfig = configs.find((c: any) => c.method_id === method.id)
+          if (savedConfig) {
+            return {
+              ...method,
+              enabled: savedConfig.enabled ?? false,
+              parameters: {
+                ...method.parameters,
+                ...(savedConfig.config as object || {})
+              }
+            }
+          }
+          return method
+        })
+        setMethods(updatedMethods)
+      }
+    } catch (error) {
+      console.error("Error loading preprocessing configs:", error)
+      toast.error("Failed to load configurations")
+    }
+  }
 
   const handleToggleMethod = (id: string) => {
     setMethods(methods.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)))
-    setSaved(false)
   }
 
   const handleParameterChange = (methodId: string, paramKey: string, value: number | string) => {
@@ -193,17 +148,27 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
         return m
       }),
     )
-    setSaved(false)
   }
 
   const handleSaveConfig = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    startTransition(async () => {
+      try {
+        // Save each method config
+        await Promise.all(methods.map(method => 
+          savePreprocessingConfig(method.id, method.enabled, method.parameters)
+        ))
+        toast.success("Configuration saved successfully")
+      } catch (error) {
+        console.error("Error saving config:", error)
+        toast.error("Failed to save configuration")
+      }
+    })
   }
 
   const handleResetToDefault = () => {
     if (confirm("Reset all preprocessing configurations to default values?")) {
-      location.reload()
+      setMethods(defaultMethods)
+      toast.info("Reset to defaults. Click Save to persist changes.")
     }
   }
 
@@ -406,10 +371,11 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
             <div className="flex gap-3 sticky bottom-6">
               <Button
                 onClick={handleSaveConfig}
+                disabled={isPending}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                Save Configuration
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {isPending ? "Saving..." : "Save Configuration"}
               </Button>
               <Button
                 onClick={handleResetToDefault}
@@ -419,17 +385,10 @@ export function PreprocessingConfigPage({ onNavigate, onLogout }: PreprocessingC
                 Reset to Defaults
               </Button>
             </div>
-
-            {/* Saved Notification */}
-            {saved && (
-              <div className="fixed bottom-6 right-6 bg-green-900/90 border border-green-700/50 text-green-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4" />
-                Configuration saved successfully!
-              </div>
-            )}
           </div>
         </main>
       </div>
     </div>
   )
 }
+

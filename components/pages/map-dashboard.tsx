@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header"
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getStations, Station } from "@/app/actions/station-actions"
 
 interface MapDashboardProps {
   role: "guest" | "expert" | "admin"
@@ -13,105 +14,33 @@ interface MapDashboardProps {
   onLogout: () => void
 }
 
-// Mock data for Mekong River water stations
-const mockStations = [
-  {
-    id: 1,
-    name: "Jinghong",
-    lat: 22.02,
-    lng: 100.79,
-    waterLevel: 3.21,
-    status: 'normal' as const
-  },
-  {
-    id: 2,
-    name: "Chiang Saen",
-    lat: 20.27,
-    lng: 100.08,
-    waterLevel: 3.52,
-    status: 'normal' as const
-  },
-  {
-    id: 3,
-    name: "Luang Prabang",
-    lat: 19.88,
-    lng: 102.14,
-    waterLevel: 4.12,
-    status: 'warning' as const
-  },
-  {
-    id: 4,
-    name: "Vientiane",
-    lat: 17.97,
-    lng: 102.61,
-    waterLevel: 3.85,
-    status: 'normal' as const
-  },
-  {
-    id: 5,
-    name: "Pakse",
-    lat: 15.12,
-    lng: 105.80,
-    waterLevel: 5.21,
-    status: 'critical' as const
-  },
-  {
-    id: 6,
-    name: "Stung Treng",
-    lat: 13.57,
-    lng: 105.97,
-    waterLevel: 4.85,
-    status: 'warning' as const
-  },
-  {
-    id: 7,
-    name: "Kratie",
-    lat: 12.49,
-    lng: 106.02,
-    waterLevel: 4.52,
-    status: 'warning' as const
-  },
-  {
-    id: 8,
-    name: "Tan Chau",
-    lat: 10.78,
-    lng: 105.24,
-    waterLevel: 2.85,
-    status: 'normal' as const
-  },
-  {
-    id: 9,
-    name: "Châu Đốc",
-    lat: 10.70,
-    lng: 105.05,
-    waterLevel: 2.68,
-    status: 'normal' as const
-  }
-]
-
 export function MapDashboard({ role, onNavigate, onLogout }: MapDashboardProps) {
-  const [selectedStation, setSelectedStation] = useState<typeof mockStations[0] | null>(null)
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [stations, setStations] = useState(mockStations)
+  const [stations, setStations] = useState<Station[]>([])
   const [lastUpdate, setLastUpdate] = useState(new Date())
 
-  // Auto-refresh data every 15 minutes
   useEffect(() => {
+    fetchStations()
     const interval = setInterval(() => {
-      // Simulate real-time data update
-      const updatedStations = stations.map(station => ({
-        ...station,
-        waterLevel: Number((station.waterLevel + (Math.random() - 0.5) * 0.1).toFixed(2))
-      }))
-      setStations(updatedStations)
-      setLastUpdate(new Date())
-      console.log('Data refreshed at:', new Date().toLocaleTimeString())
+      fetchStations()
     }, 15 * 60 * 1000) // 15 minutes
 
     return () => clearInterval(interval)
-  }, [stations])
+  }, [])
 
-  const handleStationClick = (station: typeof mockStations[0]) => {
+  const fetchStations = async () => {
+    try {
+      const data = await getStations()
+      setStations(data)
+      setLastUpdate(new Date())
+      console.log('Data refreshed at:', new Date().toLocaleTimeString())
+    } catch (error) {
+      console.error("Error fetching stations:", error)
+    }
+  }
+
+  const handleStationClick = (station: Station) => {
     setSelectedStation(station)
     setIsModalOpen(true)
   }
@@ -171,7 +100,7 @@ export function MapDashboard({ role, onNavigate, onLogout }: MapDashboardProps) 
                   >
                     <h3 className="font-semibold text-white text-sm">{station.name}</h3>
                     <p className="text-slate-300 text-xs mt-1">
-                      Level: {station.waterLevel}m
+                      Level: {station.waterLevel.toFixed(2)}m
                     </p>
                     <span 
                       className={`inline-block mt-2 px-2 py-1 text-xs rounded ${

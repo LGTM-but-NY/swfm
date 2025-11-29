@@ -185,6 +185,127 @@ export type Database = {
           },
         ];
       };
+      station_model_configs: {
+        Row: {
+          id: string;
+          station_id: number;
+          model_type: string;
+          config: Json;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          station_id: number;
+          model_type: string;
+          config?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          station_id?: number;
+          model_type?: string;
+          config?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "station_model_configs_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      model_performance: {
+        Row: {
+          accuracy: number | null;
+          evaluated_at: string | null;
+          id: string;
+          mae: number | null;
+          model_name: string;
+          r2: number | null;
+          rmse: number | null;
+        };
+        Insert: {
+          accuracy?: number | null;
+          evaluated_at?: string | null;
+          id?: string;
+          mae?: number | null;
+          model_name: string;
+          r2?: number | null;
+          rmse?: number | null;
+        };
+        Update: {
+          accuracy?: number | null;
+          evaluated_at?: string | null;
+          id?: string;
+          mae?: number | null;
+          model_name?: string;
+          r2?: number | null;
+          rmse?: number | null;
+        };
+        Relationships: [];
+      };
+      preprocessing_configs: {
+        Row: {
+          config: Json;
+          enabled: boolean | null;
+          id: string;
+          method_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          config?: Json;
+          enabled?: boolean | null;
+          id?: string;
+          method_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          config?: Json;
+          enabled?: boolean | null;
+          id?: string;
+          method_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      regression_analysis: {
+        Row: {
+          actual: number | null;
+          analyzed_at: string | null;
+          id: string;
+          predicted: number | null;
+          residual: number | null;
+          station_id: number | null;
+        };
+        Insert: {
+          actual?: number | null;
+          analyzed_at?: string | null;
+          id?: string;
+          predicted?: number | null;
+          residual?: number | null;
+          station_id?: number | null;
+        };
+        Update: {
+          actual?: number | null;
+          analyzed_at?: string | null;
+          id?: string;
+          predicted?: number | null;
+          residual?: number | null;
+          station_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "regression_analysis_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       role_permissions: {
         Row: {
           id: number;
@@ -509,6 +630,34 @@ export type InsertModelConfigs =
   Database["public"]["Tables"]["model_configs"]["Insert"];
 export type UpdateModelConfigs =
   Database["public"]["Tables"]["model_configs"]["Update"];
+
+export type StationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Row"];
+export type InsertStationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Insert"];
+export type UpdateStationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Update"];
+
+export type ModelPerformance =
+  Database["public"]["Tables"]["model_performance"]["Row"];
+export type InsertModelPerformance =
+  Database["public"]["Tables"]["model_performance"]["Insert"];
+export type UpdateModelPerformance =
+  Database["public"]["Tables"]["model_performance"]["Update"];
+
+export type PreprocessingConfigs =
+  Database["public"]["Tables"]["preprocessing_configs"]["Row"];
+export type InsertPreprocessingConfigs =
+  Database["public"]["Tables"]["preprocessing_configs"]["Insert"];
+export type UpdatePreprocessingConfigs =
+  Database["public"]["Tables"]["preprocessing_configs"]["Update"];
+
+export type RegressionAnalysis =
+  Database["public"]["Tables"]["regression_analysis"]["Row"];
+export type InsertRegressionAnalysis =
+  Database["public"]["Tables"]["regression_analysis"]["Insert"];
+export type UpdateRegressionAnalysis =
+  Database["public"]["Tables"]["regression_analysis"]["Update"];
 
 export type RolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Row"];
