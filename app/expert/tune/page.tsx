@@ -1,6 +1,6 @@
 "use client"
 
-import { TuneParametersPage } from "@/components/pages/tune-parameters"
+import { TuneParametersPage } from "@/components/features/data-scientist/tune-parameters"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"

@@ -4,9 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapView } from "@/components/dashboard/map-view"
-import { StationDataPanel } from "@/components/dashboard/station-data-panel"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
-import { AlertsBanner } from "@/components/dashboard/alerts-banner"
 import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield } from "lucide-react"
 import Link from "next/link"
 
@@ -73,8 +71,6 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
             </Card>
           )}
 
-          <AlertsBanner />
-
           {/* Key Metrics */}
           <div className="grid grid-cols-4 gap-4">
             <Card className="bg-slate-800 border-slate-700">
@@ -140,10 +136,6 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                   <ForecastChart station={selectedStation} />
                 </CardContent>
               </Card>
-            </div>
-
-            <div>
-              <StationDataPanel station={selectedStation} role={role} />
             </div>
           </div>
         </div>

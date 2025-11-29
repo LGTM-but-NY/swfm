@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { EvaluationMetrics } from "@/components/evaluation/evaluation-metrics"
-import { AccuracyChart } from "@/components/evaluation/accuracy-chart"
-import { ErrorDistribution } from "@/components/evaluation/error-distribution"
+import { EvaluationMetrics } from "@/components/features/data-scientist/evaluation-metrics"
+import { AccuracyChart } from "@/components/features/data-scientist/accuracy-chart"
+import { ErrorDistribution } from "@/components/features/data-scientist/error-distribution"
 import { getEvaluationMetrics } from "@/app/actions/analysis-actions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RegressionAnalysisPage } from "@/components/pages/regression-analysis"
+import { RegressionAnalysisPage } from "@/components/features/data-scientist/regression-analysis"
 
 interface ModelEvaluationPageProps {
   role: "expert" | "admin"

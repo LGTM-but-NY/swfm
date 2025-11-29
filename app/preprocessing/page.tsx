@@ -1,6 +1,6 @@
 "use client"
 
-import { PreprocessingConfigPage } from "@/components/pages/preprocessing-config"
+import { PreprocessingConfigPage } from "@/components/features/data-scientist/preprocessing-config"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"

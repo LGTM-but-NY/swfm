@@ -1,6 +1,6 @@
 "use client"
 
-import { ModelEvaluationPage } from "@/components/pages/model-evaluation"
+import { ModelEvaluationPage } from "@/components/features/data-scientist/model-evaluation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"

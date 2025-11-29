@@ -1,6 +1,6 @@
 "use client"
 
-import { DataManagementPage } from "@/components/pages/data-management"
+import { DataManagementPage } from "@/components/features/data-scientist/data-management"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"

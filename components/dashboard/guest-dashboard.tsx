@@ -3,26 +3,22 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
-import { StationDataPanel } from "@/components/dashboard/station-data-panel"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
-import { AlertsBanner } from "@/components/dashboard/alerts-banner"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, Station } from "@/app/actions/station-actions"
 
-interface GuestDashboardProps {
-  role: "guest" | "expert" | "admin"
-}
 
-export function GuestDashboard({ role }: GuestDashboardProps) {
+export function GuestDashboard() {  
   const [selectedStation, setSelectedStation] = useState<string>("Vientiane")
   const [selectedStationData, setSelectedStationData] = useState<Station | null>(null)
   const [stations, setStations] = useState<Station[]>([])
-  const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Fetch stations
   useEffect(() => {
     fetchStations()
+    setLastUpdate(new Date())
     const interval = setInterval(() => {
       fetchStations()
       setLastUpdate(new Date())
@@ -56,7 +52,7 @@ export function GuestDashboard({ role }: GuestDashboardProps) {
       <main className="flex-1 overflow-auto">
         <div className="px-6 pt-4 pb-2">
           <span className="text-xs text-slate-400">
-            Last update: {lastUpdate.toLocaleTimeString('en-GB')} • Auto-refresh every 15 minutes
+            Last update: {lastUpdate ? lastUpdate.toLocaleTimeString('en-GB') : '...'} • Auto-refresh every 15 minutes
           </span>
         </div>
         
@@ -67,12 +63,7 @@ export function GuestDashboard({ role }: GuestDashboardProps) {
         />
 
         <div className="p-6 pt-2 space-y-6">
-          {/* Alerts Banner */}
-          <AlertsBanner />
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Map and Station List */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 space-y-6">
               <Card className="bg-slate-800 border-slate-700">
                 <CardHeader>
@@ -100,11 +91,6 @@ export function GuestDashboard({ role }: GuestDashboardProps) {
                   <ForecastChart station={selectedStation} />
                 </CardContent>
               </Card>
-            </div>
-
-            {/* Right Sidebar - Station Details */}
-            <div>
-              <StationDataPanel station={selectedStation} role={role} />
             </div>
           </div>
         </div>

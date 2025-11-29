@@ -1,6 +1,6 @@
 "use client"
 
-import { UserManagementPage } from "@/components/pages/user-management"
+import { UserManagementPage } from "@/components/features/admin/user-management"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"

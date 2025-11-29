@@ -6,6 +6,7 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  LogIn,
   Sparkles,
 } from "lucide-react"
 
@@ -34,6 +35,27 @@ import { useAuth } from "@/providers/auth-provider"
 export function NavUser() {
   const { isMobile } = useSidebar()
   const { user, role, signOut } = useAuth()
+
+  if (role === "guest") {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" asChild>
+            <a href="/auth/login">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg">G</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">Guest User</span>
+                <span className="truncate text-xs">Click to login</span>
+              </div>
+              <LogIn className="ml-auto size-4" />
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   return (
     <SidebarMenu>
