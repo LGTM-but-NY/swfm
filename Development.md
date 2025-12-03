@@ -30,7 +30,7 @@ pnpm install
 Start the local Supabase instance. This will spin up the database, authentication, and other services in Docker containers.
 
 ```bash
-pnpm supabase start
+pnpx supabase start
 ```
 
 > **Note**: Ensure Docker is running before executing this command.
@@ -41,7 +41,7 @@ After Supabase starts successfully, it will output the API URL and keys. You nee
 
 1.  Copy the example environment file:
     ```bash
-    cp .env.example .env.local
+    cp example.env .env.local
     ```
 
 2.  Update `.env.local` with the values from the `supabase start` output:

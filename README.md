@@ -4,7 +4,7 @@
 
 - Node.js v22.10.0
 - Docker
- 
+
 ## Development
 
 For detailed instructions on setting up the project, running it locally, and understanding the development workflow, please refer to [Development.md](./Development.md).
