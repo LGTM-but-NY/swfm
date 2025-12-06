@@ -1,3 +1,4 @@
+-- Seed stations table with all monitoring stations from API endpoints
 INSERT INTO
     "public"."stations" (
         "id",
@@ -22,7 +23,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'China',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -36,7 +37,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'Thailand',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -50,7 +51,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'LaoPDR',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -64,9 +65,9 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'LaoPDR',
-        null,
-        null,
-        null,
+        'Mekong',
+        '11.5',
+        '12.5',
         'false'
     ),
     (
@@ -78,7 +79,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'LaoPDR',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -92,7 +93,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'Cambodia',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -120,7 +121,7 @@ VALUES (
         null,
         '2025-11-29 03:20:22.680455+00',
         'VietNam',
-        null,
+        'Mekong',
         null,
         null,
         'false'
@@ -138,7 +139,210 @@ VALUES (
         '3',
         '4',
         'false'
-    );
+    ),
+    -- New stations added from API endpoints
+    (
+        '10',
+        '020102',
+        'Prek Kdam',
+        '11.81',
+        '104.81',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'Cambodia',
+        'Tonlesap',
+        '9.5',
+        '10',
+        'false'
+    ),
+    (
+        '11',
+        '033401',
+        'Chaktomuk',
+        '11.57',
+        '104.93',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'Cambodia',
+        'Bassac',
+        '10.5',
+        '12',
+        'false'
+    ),
+    (
+        '12',
+        '019806',
+        'Neak Luong',
+        '11.25',
+        '105.28',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'Cambodia',
+        'Mekong',
+        '7.5',
+        '8',
+        'false'
+    ),
+    (
+        '13',
+        '033402',
+        'Koh Khel',
+        '11.30',
+        '105.00',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'Cambodia',
+        'Bassac',
+        '7.9',
+        '8.4',
+        'false'
+    ),
+    (
+        '14',
+        '019804',
+        'My Thuan',
+        '10.27',
+        '105.91',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'Mekong',
+        '1.6',
+        '1.8',
+        'false'
+    ),
+    (
+        '15',
+        '985203',
+        'Vam Kenh',
+        '10.01',
+        '106.53',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'Mekong',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '16',
+        '908001',
+        'Cho Lach',
+        '10.24',
+        '106.15',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'HamLuong',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '17',
+        '908002',
+        'My Hoa',
+        '10.18',
+        '106.28',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'HamLuong',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '18',
+        '981702',
+        'Tra Vinh',
+        '9.95',
+        '106.34',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'CoChien',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '19',
+        '901503',
+        'Long Dinh',
+        '10.41',
+        '106.22',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'Xang',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '20',
+        '980601',
+        'Vam Nao',
+        '10.50',
+        '105.45',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'VamNao',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '21',
+        '039803',
+        'Can Tho',
+        '10.04',
+        '105.78',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'Bassac',
+        '1.7',
+        '1.9',
+        'false'
+    ),
+    (
+        '22',
+        '039812',
+        'Dai Ngai',
+        '9.78',
+        '105.98',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'Bassac',
+        null,
+        null,
+        'false'
+    ),
+    (
+        '23',
+        '902602',
+        'Vi Thanh',
+        '9.78',
+        '105.47',
+        null,
+        '2025-12-06 03:00:00.000000+00',
+        'VietNam',
+        'XaNo',
+        null,
+        null,
+        'false'
+    )
+ON CONFLICT ("station_code") DO UPDATE SET
+    "name" = EXCLUDED."name",
+    "country" = EXCLUDED."country",
+    "river" = EXCLUDED."river",
+    "alarm_level" = EXCLUDED."alarm_level",
+    "flood_level" = EXCLUDED."flood_level";
 
 -- Seed role_permissions table with the default role-to-permission mappings
 -- This is critical for RLS policies to work correctly

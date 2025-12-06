@@ -306,6 +306,30 @@ export type Database = {
           },
         ];
       };
+      sync_logs: {
+        Row: {
+          id: string;
+          synced_at: string;
+          success_count: number;
+          error_count: number;
+          details: Json;
+        };
+        Insert: {
+          id?: string;
+          synced_at?: string;
+          success_count?: number;
+          error_count?: number;
+          details?: Json;
+        };
+        Update: {
+          id?: string;
+          synced_at?: string;
+          success_count?: number;
+          error_count?: number;
+          details?: Json;
+        };
+        Relationships: [];
+      };
       role_permissions: {
         Row: {
           id: number;
@@ -658,6 +682,12 @@ export type InsertRegressionAnalysis =
   Database["public"]["Tables"]["regression_analysis"]["Insert"];
 export type UpdateRegressionAnalysis =
   Database["public"]["Tables"]["regression_analysis"]["Update"];
+
+export type SyncLogs = Database["public"]["Tables"]["sync_logs"]["Row"];
+export type InsertSyncLogs =
+  Database["public"]["Tables"]["sync_logs"]["Insert"];
+export type UpdateSyncLogs =
+  Database["public"]["Tables"]["sync_logs"]["Update"];
 
 export type RolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Row"];

@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/field"
 import { Search, Plus, Upload, Download, Filter, Trash2, Edit2, CheckCircle2, AlertCircle, Calendar as CalendarIcon, RefreshCw, Settings } from "lucide-react"
 import { getDataRecords, addDataRecord, updateDataRecord, deleteDataRecord, verifyDataRecord, getStations, DataRecord } from "@/app/actions/data-actions"
+import { getLastSyncLog, triggerManualSync, SyncLog } from "@/app/actions/sync-actions"
+import { formatSyncTimeAgo } from "@/lib/utils/sync-utils"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -27,6 +29,8 @@ export function DataManagementPage() {
   const [stations, setStations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
+  const [lastSync, setLastSync] = useState<SyncLog | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -41,7 +45,35 @@ export function DataManagementPage() {
   useEffect(() => {
     fetchData()
     fetchStations()
+    fetchLastSync()
   }, [])
+
+  const fetchLastSync = async () => {
+    try {
+      const syncLog = await getLastSyncLog()
+      setLastSync(syncLog)
+    } catch (error) {
+      console.error("Error fetching last sync:", error)
+    }
+  }
+
+  const handleManualSync = async () => {
+    setIsSyncing(true)
+    try {
+      const result = await triggerManualSync()
+      if (result.success) {
+        toast.success(result.message)
+        fetchData()
+        fetchLastSync()
+      } else {
+        toast.error(result.message)
+      }
+    } catch (error) {
+      toast.error("Failed to trigger sync")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -193,13 +225,28 @@ export function DataManagementPage() {
           {/* Auto-sync Info */}
           <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 flex gap-3">
             <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-blue-300">Automated Data Synchronization</p>
               <p className="text-xs text-slate-400 mt-1">
-                System automatically syncs water level, flow, and rainfall data from monitoring.mrcmekong.org every 15
-                minutes. Last sync: 5 minutes ago.
+                System automatically syncs water level, flow, and rainfall data from mkmonitoring.siwrr.io.vn every 15
+                minutes. Last sync: {lastSync ? formatSyncTimeAgo(lastSync.synced_at) : 'Never'}
+                {lastSync && (
+                  <span className="ml-2">
+                    ({lastSync.success_count} success, {lastSync.error_count} errors)
+                  </span>
+                )}
               </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="border-blue-600 text-blue-300 hover:bg-blue-900/50 shrink-0"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync Now'}
+            </Button>
           </div>
 
           {/* Add Record Form */}
