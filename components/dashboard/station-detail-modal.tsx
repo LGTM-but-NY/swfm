@@ -1,10 +1,22 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import { StationChart } from '@/components/dashboard/station-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, Cloud, Thermometer, Droplets, Wind, Gauge } from 'lucide-react'
 import { StationWithStatus } from '@/app/actions/station-actions'
+import { getLatestWeatherForStation, WeatherData } from '@/app/actions/weather-actions'
+
+/**
+ * Get wind direction as compass point
+ */
+function getWindDirection(degrees: number | null): string {
+  if (degrees === null) return 'N/A'
+  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+  const index = Math.round(degrees / 22.5) % 16
+  return directions[index]
+}
 
 interface StationDetailModalProps {
   station: StationWithStatus | null
@@ -13,6 +25,20 @@ interface StationDetailModalProps {
 }
 
 export function StationDetailModal({ station, isOpen, onClose }: StationDetailModalProps) {
+  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [loadingWeather, setLoadingWeather] = useState(false)
+
+  useEffect(() => {
+    if (isOpen && station) {
+      setLoadingWeather(true)
+      getLatestWeatherForStation(station.id)
+        .then(data => setWeather(data))
+        .finally(() => setLoadingWeather(false))
+    } else {
+      setWeather(null)
+    }
+  }, [isOpen, station])
+
   if (!isOpen || !station) return null
 
   return (
@@ -72,6 +98,95 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Weather Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-blue-400" />
+                Weather Conditions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingWeather ? (
+                <div className="text-center py-4 text-slate-400">Loading weather data...</div>
+              ) : weather ? (
+                <div className="space-y-4">
+                  {/* Weather main condition */}
+                  {weather.weather_main && (
+                    <div className="text-center pb-2 border-b border-slate-700">
+                      <p className="text-lg font-semibold text-white capitalize">{weather.weather_main}</p>
+                      <p className="text-sm text-slate-400 capitalize">{weather.weather_description}</p>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    {/* Temperature */}
+                    <div className="text-center p-3 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg border border-orange-500/30">
+                      <Thermometer className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                      <p className="text-slate-400 text-xs">Temperature</p>
+                      <p className="text-xl font-bold text-white">
+                        {weather.temperature !== null ? `${weather.temperature.toFixed(1)}°C` : 'N/A'}
+                      </p>
+                      {weather.temp_min !== null && weather.temp_max !== null && (
+                        <p className="text-xs text-slate-400">
+                          {weather.temp_min.toFixed(0)}° / {weather.temp_max.toFixed(0)}°
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Humidity */}
+                    <div className="text-center p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-500/30">
+                      <Droplets className="w-5 h-5 mx-auto mb-1 text-blue-400" />
+                      <p className="text-slate-400 text-xs">Humidity</p>
+                      <p className="text-xl font-bold text-white">
+                        {weather.humidity !== null ? `${weather.humidity}%` : 'N/A'}
+                      </p>
+                    </div>
+
+                    {/* Wind */}
+                    <div className="text-center p-3 bg-gradient-to-br from-teal-500/20 to-green-500/20 rounded-lg border border-teal-500/30">
+                      <Wind className="w-5 h-5 mx-auto mb-1 text-teal-400" />
+                      <p className="text-slate-400 text-xs">Wind</p>
+                      <p className="text-xl font-bold text-white">
+                        {weather.wind_speed !== null ? `${weather.wind_speed.toFixed(1)} m/s` : 'N/A'}
+                      </p>
+                      <p className="text-xs text-slate-400">{getWindDirection(weather.wind_deg)}</p>
+                    </div>
+
+                    {/* Pressure */}
+                    <div className="text-center p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30">
+                      <Gauge className="w-5 h-5 mx-auto mb-1 text-purple-400" />
+                      <p className="text-slate-400 text-xs">Pressure</p>
+                      <p className="text-xl font-bold text-white">
+                        {weather.pressure !== null ? `${weather.pressure} hPa` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Rain if available */}
+                  {weather.rain_1h !== null && weather.rain_1h > 0 && (
+                    <div className="text-center p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-blue-400 text-sm">
+                        🌧️ Rain (last hour): <span className="font-bold">{weather.rain_1h.toFixed(1)} mm</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Last updated */}
+                  <p className="text-xs text-slate-500 text-right">
+                    Weather updated: {new Date(weather.measured_at).toLocaleString('vi-VN')}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-slate-400">
+                  <Cloud className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No weather data available</p>
+                  <p className="text-xs mt-1">Weather data is synced hourly</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

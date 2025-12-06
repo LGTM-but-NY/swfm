@@ -147,7 +147,7 @@ serve(async (req: Request) => {
 
         // Upsert measurement (unique constraint on station_id + measured_at)
         const { error: upsertError } = await supabase
-          .from('measurements')
+          .from('station_measurements')
           .upsert({
             station_id: station.id,
             measured_at: measuredAt.toISOString(),

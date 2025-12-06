@@ -15,11 +15,9 @@ import {
   Field,
   FieldLabel,
   FieldGroup,
-  FieldSet,
-  FieldTitle,
 } from "@/components/ui/field"
-import { Settings, AlertCircle, CheckCircle2, ChevronDown, Loader2, Save, Play, Settings2 } from "lucide-react"
-import { getPreprocessingConfigs, savePreprocessingConfig, runPreprocessing, PreprocessingConfig } from "@/app/actions/preprocessing-actions"
+import {  AlertCircle, ChevronDown, Loader2, Save, Play } from "lucide-react"
+import { getPreprocessingConfigs, savePreprocessingConfig } from "@/app/actions/preprocessing-actions"
 import { toast } from "sonner"
 
 interface PreprocessingMethod {
@@ -174,25 +172,6 @@ export function PreprocessingConfigPage() {
     })
   }
 
-  const handleRun = async () => {
-    setIsProcessing(true)
-    try {
-      await runPreprocessing()
-      toast.success("Preprocessing pipeline completed")
-    } catch (error) {
-      toast.error("Preprocessing failed")
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
-  const handleResetToDefault = () => {
-    if (confirm("Reset all preprocessing configurations to default values?")) {
-      setMethods(defaultMethods)
-      toast.info("Reset to defaults. Click Save to persist changes.")
-    }
-  }
-
   const enabledMethodsCount = methods.filter((m) => m.enabled).length
 
   return (
@@ -208,10 +187,6 @@ export function PreprocessingConfigPage() {
               {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Config
             </Button>
-            <Button onClick={handleRun} disabled={isProcessing} className="bg-blue-600 hover:bg-blue-700">
-              <Play className="w-4 h-4 mr-2" />
-              {isProcessing ? "Running..." : "Run Pipeline"}
-            </Button>
           </div>
         </div>
 
@@ -225,12 +200,6 @@ export function PreprocessingConfigPage() {
                 <p className="text-xs text-slate-400 mt-2">
                   Data automatically preprocessed when synced from monitoring.mrcmekong.org
                 </p>
-              </div>
-              <div className="text-right">
-                <div className="inline-flex items-center gap-2 bg-blue-900/30 text-blue-300 px-3 py-2 rounded-lg text-xs font-medium border border-blue-700/50">
-                  <Settings className="w-4 h-4" />
-                  Advanced Config
-                </div>
               </div>
             </div>
           </CardContent>

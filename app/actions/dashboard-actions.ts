@@ -45,7 +45,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   yesterday.setHours(yesterday.getHours() - 24)
   
   const { data: recentMeasurements, error: measurementsError } = await supabase
-    .from('measurements')
+    .from('station_measurements')
     .select('station_id, water_level, rainfall_24h')
     .gte('measured_at', yesterday.toISOString())
     .order('measured_at', { ascending: false })

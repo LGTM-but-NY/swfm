@@ -43,10 +43,3 @@ export async function savePreprocessingConfig(methodId: string, enabled: boolean
   revalidatePath('/preprocessing')
   return { success: true }
 }
-
-export async function runPreprocessing() {
-  // Mock run
-  console.log("Running preprocessing pipeline...")
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  return { success: true, message: "Preprocessing completed successfully" }
-}

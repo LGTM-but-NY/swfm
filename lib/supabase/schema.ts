@@ -82,71 +82,6 @@ export type Database = {
           },
         ];
       };
-      measurements: {
-        Row: {
-          created_at: string;
-          fetched_at: string | null;
-          flow_rate: number | null;
-          id: number;
-          measured_at: string;
-          rainfall: number | null;
-          rainfall_12h: number | null;
-          rainfall_1h: number | null;
-          rainfall_24h: number | null;
-          rainfall_6h: number | null;
-          rainfall_7to7: number | null;
-          source: string | null;
-          station_id: number;
-          status: string | null;
-          unit: string | null;
-          water_level: number | null;
-        };
-        Insert: {
-          created_at?: string;
-          fetched_at?: string | null;
-          flow_rate?: number | null;
-          id?: number;
-          measured_at: string;
-          rainfall?: number | null;
-          rainfall_12h?: number | null;
-          rainfall_1h?: number | null;
-          rainfall_24h?: number | null;
-          rainfall_6h?: number | null;
-          rainfall_7to7?: number | null;
-          source?: string | null;
-          station_id: number;
-          status?: string | null;
-          unit?: string | null;
-          water_level?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          fetched_at?: string | null;
-          flow_rate?: number | null;
-          id?: number;
-          measured_at?: string;
-          rainfall?: number | null;
-          rainfall_12h?: number | null;
-          rainfall_1h?: number | null;
-          rainfall_24h?: number | null;
-          rainfall_6h?: number | null;
-          rainfall_7to7?: number | null;
-          source?: string | null;
-          station_id?: number;
-          status?: string | null;
-          unit?: string | null;
-          water_level?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "measurements_station_id_fkey";
-            columns: ["station_id"];
-            isOneToOne: false;
-            referencedRelation: "stations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       model_configs: {
         Row: {
           algorithm: string;
@@ -318,6 +253,71 @@ export type Database = {
         };
         Relationships: [];
       };
+      station_measurements: {
+        Row: {
+          created_at: string;
+          fetched_at: string | null;
+          flow_rate: number | null;
+          id: number;
+          measured_at: string;
+          rainfall: number | null;
+          rainfall_12h: number | null;
+          rainfall_1h: number | null;
+          rainfall_24h: number | null;
+          rainfall_6h: number | null;
+          rainfall_7to7: number | null;
+          source: string | null;
+          station_id: number;
+          status: string | null;
+          unit: string | null;
+          water_level: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          fetched_at?: string | null;
+          flow_rate?: number | null;
+          id?: number;
+          measured_at: string;
+          rainfall?: number | null;
+          rainfall_12h?: number | null;
+          rainfall_1h?: number | null;
+          rainfall_24h?: number | null;
+          rainfall_6h?: number | null;
+          rainfall_7to7?: number | null;
+          source?: string | null;
+          station_id: number;
+          status?: string | null;
+          unit?: string | null;
+          water_level?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          fetched_at?: string | null;
+          flow_rate?: number | null;
+          id?: number;
+          measured_at?: string;
+          rainfall?: number | null;
+          rainfall_12h?: number | null;
+          rainfall_1h?: number | null;
+          rainfall_24h?: number | null;
+          rainfall_6h?: number | null;
+          rainfall_7to7?: number | null;
+          source?: string | null;
+          station_id?: number;
+          status?: string | null;
+          unit?: string | null;
+          water_level?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "station_measurements_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       station_model_configs: {
         Row: {
           config: Json;
@@ -468,6 +468,74 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"];
         };
         Relationships: [];
+      };
+      weather_measurements: {
+        Row: {
+          clouds: number | null;
+          created_at: string;
+          feels_like: number | null;
+          humidity: number | null;
+          id: number;
+          measured_at: string;
+          pressure: number | null;
+          rain_1h: number | null;
+          station_id: number;
+          temp_max: number | null;
+          temp_min: number | null;
+          temperature: number | null;
+          visibility: number | null;
+          weather_description: string | null;
+          weather_main: string | null;
+          wind_deg: number | null;
+          wind_speed: number | null;
+        };
+        Insert: {
+          clouds?: number | null;
+          created_at?: string;
+          feels_like?: number | null;
+          humidity?: number | null;
+          id?: number;
+          measured_at: string;
+          pressure?: number | null;
+          rain_1h?: number | null;
+          station_id: number;
+          temp_max?: number | null;
+          temp_min?: number | null;
+          temperature?: number | null;
+          visibility?: number | null;
+          weather_description?: string | null;
+          weather_main?: string | null;
+          wind_deg?: number | null;
+          wind_speed?: number | null;
+        };
+        Update: {
+          clouds?: number | null;
+          created_at?: string;
+          feels_like?: number | null;
+          humidity?: number | null;
+          id?: number;
+          measured_at?: string;
+          pressure?: number | null;
+          rain_1h?: number | null;
+          station_id?: number;
+          temp_max?: number | null;
+          temp_min?: number | null;
+          temperature?: number | null;
+          visibility?: number | null;
+          weather_description?: string | null;
+          weather_main?: string | null;
+          wind_deg?: number | null;
+          wind_speed?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "weather_measurements_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
@@ -669,12 +737,6 @@ export type InsertForecasts =
 export type UpdateForecasts =
   Database["public"]["Tables"]["forecasts"]["Update"];
 
-export type Measurements = Database["public"]["Tables"]["measurements"]["Row"];
-export type InsertMeasurements =
-  Database["public"]["Tables"]["measurements"]["Insert"];
-export type UpdateMeasurements =
-  Database["public"]["Tables"]["measurements"]["Update"];
-
 export type ModelConfigs = Database["public"]["Tables"]["model_configs"]["Row"];
 export type InsertModelConfigs =
   Database["public"]["Tables"]["model_configs"]["Insert"];
@@ -709,6 +771,13 @@ export type InsertRolePermissions =
 export type UpdateRolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Update"];
 
+export type StationMeasurements =
+  Database["public"]["Tables"]["station_measurements"]["Row"];
+export type InsertStationMeasurements =
+  Database["public"]["Tables"]["station_measurements"]["Insert"];
+export type UpdateStationMeasurements =
+  Database["public"]["Tables"]["station_measurements"]["Update"];
+
 export type StationModelConfigs =
   Database["public"]["Tables"]["station_model_configs"]["Row"];
 export type InsertStationModelConfigs =
@@ -735,6 +804,13 @@ export type UpdateUserRoles =
 export type Users = Database["public"]["Tables"]["users"]["Row"];
 export type InsertUsers = Database["public"]["Tables"]["users"]["Insert"];
 export type UpdateUsers = Database["public"]["Tables"]["users"]["Update"];
+
+export type WeatherMeasurements =
+  Database["public"]["Tables"]["weather_measurements"]["Row"];
+export type InsertWeatherMeasurements =
+  Database["public"]["Tables"]["weather_measurements"]["Insert"];
+export type UpdateWeatherMeasurements =
+  Database["public"]["Tables"]["weather_measurements"]["Update"];
 
 // Functions
 export type ArgsAuthorize =

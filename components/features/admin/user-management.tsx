@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { 
-  Search, Plus, MoreVertical, Edit, Trash2, Shield, UserCheck, UserX, 
+  Search, MoreVertical, Edit, Trash2, Shield, UserCheck, UserX, 
   Users, Loader2, Mail, Calendar, Clock
 } from "lucide-react"
 import {
@@ -154,10 +153,7 @@ export function UserManagementPage() {
             <h1 className="text-2xl font-bold text-white">User Management</h1>
             <p className="text-slate-400 text-sm mt-1">Manage user accounts and permissions</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
+
         </div>
 
         {/* Stats Cards */}

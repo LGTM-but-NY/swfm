@@ -33,7 +33,7 @@ export async function getStations(): Promise<StationWithStatus[]> {
   // Fetch latest measurement for each station to determine status
   const stationsWithStatus = await Promise.all(stations.map(async (station) => {
     const { data: measurement } = await supabase
-      .from('measurements')
+      .from('station_measurements')
       .select('water_level')
       .eq('station_id', station.id)
       .order('measured_at', { ascending: false })
@@ -61,7 +61,7 @@ export async function getStationStatus(stationId: number) {
   const supabase = await createClient()
   
   const { data: measurement } = await supabase
-    .from('measurements')
+    .from('station_measurements')
     .select('water_level')
     .eq('station_id', stationId)
     .order('measured_at', { ascending: false })

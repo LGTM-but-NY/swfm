@@ -61,7 +61,7 @@ export async function getStationChartData(stationId: number, days: number) {
   if (days <= 1) {
     // For 1 day: fetch raw 15-min data
     const { data, error } = await supabase
-      .from('measurements')
+      .from('station_measurements')
       .select('measured_at, water_level')
       .eq('station_id', stationId)
       .gte('measured_at', startDate.toISOString())
@@ -76,7 +76,7 @@ export async function getStationChartData(stationId: number, days: number) {
   } else if (days <= 7) {
     // For 7 days: aggregate to hourly averages using RPC or client-side
     const { data, error } = await supabase
-      .from('measurements')
+      .from('station_measurements')
       .select('measured_at, water_level')
       .eq('station_id', stationId)
       .gte('measured_at', startDate.toISOString())
@@ -93,7 +93,7 @@ export async function getStationChartData(stationId: number, days: number) {
   } else {
     // For 14+ days: aggregate to daily averages
     const { data, error } = await supabase
-      .from('measurements')
+      .from('station_measurements')
       .select('measured_at, water_level')
       .eq('station_id', stationId)
       .gte('measured_at', startDate.toISOString())

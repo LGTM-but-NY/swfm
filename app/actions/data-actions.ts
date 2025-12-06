@@ -2,25 +2,25 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import { Measurements } from "@/lib/supabase/schema"
+import { StationMeasurements } from "@/lib/supabase/schema"
 
-// View-model for Data Management UI (transformation of Measurements)
+// View-model for Data Management UI (transformation of StationMeasurements)
 export type DataRecord = {
   id: string
   date: string      // Parsed from measured_at
   time: string      // Parsed from measured_at
   station: string   // Joined from stations table
-  value: Measurements['water_level']
-  unit: Measurements['unit']
-  source: Measurements['source']
-  status: Measurements['status']
+  value: StationMeasurements['water_level']
+  unit: StationMeasurements['unit']
+  source: StationMeasurements['source']
+  status: StationMeasurements['status']
 }
 
 export async function getDataRecords(): Promise<DataRecord[]> {
   const supabase = await createClient()
   
   const { data, error } = await supabase
-    .from('measurements')
+    .from('station_measurements')
     .select(`
       *,
       stations (
@@ -80,7 +80,7 @@ export async function addDataRecord(data: { date: string, time: string, station:
     // Construct timestamp - assuming UTC for simplicity, but ideally should match station timezone
     const measured_at = `${data.date}T${data.time}:00Z` 
 
-    const { error } = await supabase.from('measurements').insert({
+    const { error } = await supabase.from('station_measurements').insert({
         station_id: stationData.id,
         measured_at,
         water_level: data.value,
@@ -107,7 +107,7 @@ export async function updateDataRecord(id: string, data: { date: string, time: s
 
     const measured_at = `${data.date}T${data.time}:00Z`
 
-    const { error } = await supabase.from('measurements').update({
+    const { error } = await supabase.from('station_measurements').update({
         station_id: stationData.id,
         measured_at,
         water_level: data.value,
@@ -120,14 +120,14 @@ export async function updateDataRecord(id: string, data: { date: string, time: s
 
 export async function deleteDataRecord(id: string) {
     const supabase = await createClient()
-    const { error } = await supabase.from('measurements').delete().eq('id', parseInt(id))
+    const { error } = await supabase.from('station_measurements').delete().eq('id', parseInt(id))
     if (error) throw new Error(error.message)
     revalidatePath('/')
 }
 
 export async function verifyDataRecord(id: string, status: 'verified' | 'pending') {
     const supabase = await createClient()
-    const { error } = await supabase.from('measurements').update({ status }).eq('id', parseInt(id))
+    const { error } = await supabase.from('station_measurements').update({ status }).eq('id', parseInt(id))
     if (error) throw new Error(error.message)
     revalidatePath('/')
 }

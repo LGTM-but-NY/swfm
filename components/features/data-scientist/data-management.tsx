@@ -76,7 +76,7 @@ export function DataManagementPage() {
       
       // Build query with filters
       let query = supabase
-        .from('measurements')
+        .from('station_measurements')
         .select(`
           id,
           station_id,
@@ -184,7 +184,7 @@ export function DataManagementPage() {
     try {
       const supabase = createClient()
       const { error } = await supabase
-        .from('measurements')
+        .from('station_measurements')
         .delete()
         .eq('id', parseInt(id))
       
@@ -222,7 +222,7 @@ export function DataManagementPage() {
       
       if (editingRecord) {
         const { error } = await supabase
-          .from('measurements')
+          .from('station_measurements')
           .update(recordData)
           .eq('id', parseInt(editingRecord.id))
         
@@ -230,7 +230,7 @@ export function DataManagementPage() {
         toast.success("Record updated")
       } else {
         const { error } = await supabase
-          .from('measurements')
+          .from('station_measurements')
           .insert(recordData)
         
         if (error) throw error
@@ -318,7 +318,7 @@ export function DataManagementPage() {
         }
         
         const { error } = await supabase
-          .from('measurements')
+          .from('station_measurements')
           .insert({
             station_id: station.id,
             measured_at: new Date(`${record["Date"]} ${record["Time"]}`).toISOString(),
