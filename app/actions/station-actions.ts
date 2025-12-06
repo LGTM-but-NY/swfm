@@ -18,6 +18,7 @@ export async function getStations(): Promise<StationWithStatus[]> {
     .select(`
       id,
       name,
+      station_code,
       latitude,
       longitude,
       country

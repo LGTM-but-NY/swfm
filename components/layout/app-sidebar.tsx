@@ -2,13 +2,8 @@
 
 import * as React from "react"
 import {
-  BarChart3,
-  Database,
   LayoutDashboard,
   Settings,
-  Settings2,
-  Sliders,
-  Users,
   Zap,
 } from "lucide-react"
 
@@ -37,12 +32,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Expert Tools",
-      url: "/expert",
+      url: "/forecast",
       icon: Zap,
       items: [
-        { title: "Tune Parameters", url: "/expert/tune" },
-        { title: "Model Registry", url: "/expert/models" },
-        { title: "Forecasting", url: "/expert/forecast" },
+        { title: "Forecasting", url: "/forecast" },
+        { title: "Model Registry", url: "/models" },
+        { title: "Tune Parameters", url: "/tune" },
         { title: "Model Evaluation", url: "/evaluation" },
         { title: "Preprocessing", url: "/preprocessing" },
       ],
@@ -52,12 +47,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/admin",
       icon: Settings,
       items: [
-        { title: "General", url: "/admin" },
         { title: "User Management", url: "/admin/users" },
         { title: "Data Management", url: "/data" },
-        { title: "Model Registry", url: "/expert/models" },
-        { title: "Preprocessing", url: "/preprocessing" },
-        { title: "Model Evaluation", url: "/evaluation" },
       ],
     }
   ]
@@ -68,8 +59,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // Dashboard is visible to all authenticated users
     items.push(navMainData[0])
 
-    // Expert Tools are visible ONLY to Experts
-    if (role === "expert") {
+    // Expert Tools are visible to Admin and Data Scientists
+    if (role === "admin" || role === "expert") {
       items.push(navMainData[1])
     }
 

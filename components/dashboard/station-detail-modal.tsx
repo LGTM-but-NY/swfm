@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react'
 import { StationChart } from '@/components/dashboard/station-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -93,8 +92,8 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
               <CardContent>
                 <div className="space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Station ID:</span>
-                    <span className="text-white">STN-{station.id.toString().padStart(3, '0')}</span>
+                    <span className="text-slate-400">Station Code:</span>
+                    <span className="text-white">{station.station_code}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Accuracy:</span>
