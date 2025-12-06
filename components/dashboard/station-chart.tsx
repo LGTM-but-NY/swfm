@@ -232,8 +232,8 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              domain={['dataMin - 0.5', 'dataMax + 0.5']}
-              tickFormatter={(value) => `${value}m`}
+              domain={['auto', 'auto']}
+              tickFormatter={(value) => typeof value === 'number' ? `${value.toFixed(1)}m` : value}
             />
             <ChartTooltip 
               content={

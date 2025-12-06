@@ -100,7 +100,7 @@ export async function triggerManualSync(): Promise<{
     
     // Revalidate dashboard data after sync
     revalidatePath('/')
-    revalidatePath('/admin/data')
+    revalidatePath('/data')
     
     return {
       success: true,

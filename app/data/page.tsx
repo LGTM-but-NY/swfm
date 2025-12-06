@@ -10,7 +10,7 @@ export default function DataPage() {
 
   if (isLoading) return <div>Loading...</div>
 
-  if (role !== "admin") {
+  if (role !== "admin" && role !== "expert") {
     redirect("/dashboard")
   }
 

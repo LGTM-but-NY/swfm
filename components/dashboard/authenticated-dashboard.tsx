@@ -7,6 +7,7 @@ import { LeafletMap } from "@/components/dashboard/leaflet-map"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, Station } from "@/app/actions/station-actions"
+import { getDashboardMetrics, DashboardMetrics } from "@/app/actions/dashboard-actions"
 import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield } from "lucide-react"
 import Link from "next/link"
 
@@ -20,12 +21,18 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
   const [stations, setStations] = useState<Station[]>([])
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    activeStations: 0,
+    floodAlerts: 0,
+    avgWaterLevel: null,
+    rainfall24h: null
+  })
 
-  // Fetch stations and auto-refresh data every 15 minutes
+  // Fetch stations and metrics, auto-refresh every 15 minutes
   useEffect(() => {
-    fetchStations()
+    fetchData()
     const interval = setInterval(() => {
-      fetchStations()
+      fetchData()
       setLastUpdate(new Date())
       console.log('Dashboard data refreshed at:', new Date().toLocaleTimeString())
     }, 15 * 60 * 1000) // 15 minutes
@@ -33,12 +40,16 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
     return () => clearInterval(interval)
   }, [])
 
-  const fetchStations = async () => {
+  const fetchData = async () => {
     try {
-      const data = await getStations()
-      setStations(data)
+      const [stationsData, metricsData] = await Promise.all([
+        getStations(),
+        getDashboardMetrics()
+      ])
+      setStations(stationsData)
+      setMetrics(metricsData)
     } catch (error) {
-      console.error("Error fetching stations:", error)
+      console.error("Error fetching data:", error)
     }
   }
 
@@ -111,7 +122,7 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Active Stations</p>
-                    <h3 className="text-2xl font-bold text-white">24</h3>
+                    <h3 className="text-2xl font-bold text-white">{metrics.activeStations}</h3>
                   </div>
                   <Activity className="w-8 h-8 text-blue-500" />
                 </CardContent>
@@ -120,16 +131,20 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Flood Alerts</p>
-                    <h3 className="text-2xl font-bold text-red-500">3</h3>
+                    <h3 className={`text-2xl font-bold ${metrics.floodAlerts > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      {metrics.floodAlerts}
+                    </h3>
                   </div>
-                  <AlertTriangle className="w-8 h-8 text-red-500" />
+                  <AlertTriangle className={`w-8 h-8 ${metrics.floodAlerts > 0 ? 'text-red-500' : 'text-green-500'}`} />
                 </CardContent>
               </Card>
               <Card className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Avg Water Level</p>
-                    <h3 className="text-2xl font-bold text-white">4.2m</h3>
+                    <h3 className="text-2xl font-bold text-white">
+                      {metrics.avgWaterLevel !== null ? `${metrics.avgWaterLevel}m` : 'N/A'}
+                    </h3>
                   </div>
                   <Droplets className="w-8 h-8 text-cyan-500" />
                 </CardContent>
@@ -138,7 +153,9 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Rainfall (24h)</p>
-                    <h3 className="text-2xl font-bold text-white">12mm</h3>
+                    <h3 className="text-2xl font-bold text-white">
+                      {metrics.rainfall24h !== null ? `${metrics.rainfall24h}mm` : 'N/A'}
+                    </h3>
                   </div>
                   <Wind className="w-8 h-8 text-slate-400" />
                 </CardContent>
