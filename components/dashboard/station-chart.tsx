@@ -54,7 +54,13 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
         
         // Add historical measurements with proper time formatting
         measurements.forEach((m: any) => {
+          // Skip if no measured_at date
+          if (!m.measured_at) return
+          
           const measuredDate = new Date(m.measured_at)
+          
+          // Skip invalid dates
+          if (isNaN(measuredDate.getTime())) return
           
           // Format based on period
           let timeLabel: string
@@ -75,7 +81,7 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
           data.push({
             time: timeLabel,
             timestamp: measuredDate.getTime(),
-            actual: m.water_level ? Math.round(m.water_level * 100) / 100 : null,
+            actual: m.water_level != null ? Math.round(m.water_level * 100) / 100 : null,
             forecast: null,
             isToday: measuredDate.toDateString() === today.toDateString()
           })
@@ -83,14 +89,21 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
         
         // Add forecasts
         forecasts.forEach((f: any) => {
+          // Skip if no target_date
+          if (!f.target_date) return
+          
           const forecastDate = new Date(f.target_date)
+          
+          // Skip invalid dates
+          if (isNaN(forecastDate.getTime())) return
+          
           const timeLabel = forecastDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
           
           data.push({
             time: timeLabel,
             timestamp: forecastDate.getTime(),
             actual: null,
-            forecast: f.water_level ? Math.round(f.water_level * 100) / 100 : null,
+            forecast: f.water_level != null ? Math.round(f.water_level * 100) / 100 : null,
             isToday: false
           })
         })
@@ -98,21 +111,8 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
         // Sort by timestamp to ensure proper ordering
         data.sort((a, b) => a.timestamp - b.timestamp)
         
-        // Deduplicate by time label for cleaner display (keep last value for each time)
-        const uniqueData = data.reduce((acc: any[], curr) => {
-          const existing = acc.find(item => item.time === curr.time)
-          if (existing) {
-            // Merge values
-            if (curr.actual !== null) existing.actual = curr.actual
-            if (curr.forecast !== null) existing.forecast = curr.forecast
-            if (curr.isToday) existing.isToday = true
-          } else {
-            acc.push({ ...curr })
-          }
-          return acc
-        }, [])
-        
-        setChartData(uniqueData)
+        // When using numeric X-axis, keep all data points (no dedup by time label)
+        setChartData(data)
       } catch (error) {
         console.error('Error fetching chart data:', error)
       } finally {
@@ -222,11 +222,26 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
           <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid vertical={false} />
             <XAxis 
-              dataKey="time" 
+              dataKey="timestamp" 
+              type="number"
+              domain={['dataMin', 'dataMax']}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value}
+              minTickGap={30}
+              tickFormatter={(value) => {
+                if (!value || isNaN(value)) return ''
+                const date = new Date(value)
+                if (isNaN(date.getTime())) return ''
+                if (selectedPeriod === 1) {
+                  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                } else if (selectedPeriod <= 7) {
+                  return date.toLocaleDateString('en-GB', { weekday: 'short', hour: '2-digit' }) 
+                } else if (selectedPeriod <= 30) {
+                  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                }
+                return date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
+              }}
             />
             <YAxis 
               tickLine={false}
@@ -238,6 +253,19 @@ export function StationChart({ stationId, stationName }: StationChartProps) {
             <ChartTooltip 
               content={
                 <ChartTooltipContent 
+                  labelFormatter={(value, payload) => {
+                     // Access actual timestamp from payload data
+                     const timestamp = payload?.[0]?.payload?.timestamp
+                     if (!timestamp || isNaN(Number(timestamp))) return 'Unknown'
+                     const date = new Date(timestamp)
+                     if (isNaN(date.getTime())) return 'Unknown'
+                     return date.toLocaleString('en-GB', { 
+                       month: 'short', 
+                       day: 'numeric', 
+                       hour: '2-digit', 
+                       minute: '2-digit' 
+                     })
+                  }}
                   formatter={(value, name) => (
                     <span className="font-medium">{value}m</span>
                   )}

@@ -42,6 +42,11 @@ export async function getMLPredictionForChart(
 /**
  * Get water level chart data for a specific station
  * Includes historical measurements and forecasts
+ * 
+ * Data aggregation strategy:
+ * - 1 day: Raw 15-min intervals (~96 points)
+ * - 7 days: Hourly averages (~168 points)
+ * - 14+ days: Daily averages (14-180 points)
  */
 export async function getStationChartData(stationId: number, days: number) {
   const supabase = await createClient()
@@ -51,18 +56,57 @@ export async function getStationChartData(stationId: number, days: number) {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
   
-  // Get historical measurements
-  const { data: measurements, error: measurementsError } = await supabase
-    .from('measurements')
-    .select('measured_at, water_level')
-    .eq('station_id', stationId)
-    .gte('measured_at', startDate.toISOString())
-    .lte('measured_at', endDate.toISOString())
-    .order('measured_at', { ascending: true })
+  let measurements: any[] = []
   
-  if (measurementsError) {
-    console.error('Error fetching measurements:', measurementsError)
-    return { measurements: [], forecasts: [] }
+  if (days <= 1) {
+    // For 1 day: fetch raw 15-min data
+    const { data, error } = await supabase
+      .from('measurements')
+      .select('measured_at, water_level')
+      .eq('station_id', stationId)
+      .gte('measured_at', startDate.toISOString())
+      .lte('measured_at', endDate.toISOString())
+      .order('measured_at', { ascending: true })
+    
+    if (error) {
+      console.error('Error fetching measurements:', error)
+      return { measurements: [], forecasts: [] }
+    }
+    measurements = data || []
+  } else if (days <= 7) {
+    // For 7 days: aggregate to hourly averages using RPC or client-side
+    const { data, error } = await supabase
+      .from('measurements')
+      .select('measured_at, water_level')
+      .eq('station_id', stationId)
+      .gte('measured_at', startDate.toISOString())
+      .lte('measured_at', endDate.toISOString())
+      .order('measured_at', { ascending: true })
+    
+    if (error) {
+      console.error('Error fetching measurements:', error)
+      return { measurements: [], forecasts: [] }
+    }
+    
+    // Aggregate to hourly on the client side
+    measurements = aggregateToHourly(data || [])
+  } else {
+    // For 14+ days: aggregate to daily averages
+    const { data, error } = await supabase
+      .from('measurements')
+      .select('measured_at, water_level')
+      .eq('station_id', stationId)
+      .gte('measured_at', startDate.toISOString())
+      .lte('measured_at', endDate.toISOString())
+      .order('measured_at', { ascending: true })
+    
+    if (error) {
+      console.error('Error fetching measurements:', error)
+      return { measurements: [], forecasts: [] }
+    }
+    
+    // Aggregate to daily on the client side
+    measurements = aggregateToDaily(data || [])
   }
   
   // Get forecast data (future predictions)
@@ -76,13 +120,86 @@ export async function getStationChartData(stationId: number, days: number) {
   
   if (forecastsError) {
     console.error('Error fetching forecasts:', forecastsError)
-    return { measurements: measurements || [], forecasts: [] }
+    return { measurements: measurements, forecasts: [] }
   }
   
   return {
-    measurements: measurements || [],
+    measurements: measurements,
     forecasts: forecasts || []
   }
+}
+
+/**
+ * Aggregate measurements to hourly averages
+ */
+function aggregateToHourly(data: { measured_at: string; water_level: number | null }[]) {
+  const hourlyMap = new Map<string, { sum: number; count: number }>()
+  
+  for (const item of data) {
+    if (item.water_level === null) continue
+    
+    const date = new Date(item.measured_at)
+    // Create hour key: YYYY-MM-DD-HH
+    const hourKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}`
+    
+    if (hourlyMap.has(hourKey)) {
+      const existing = hourlyMap.get(hourKey)!
+      existing.sum += item.water_level
+      existing.count += 1
+    } else {
+      hourlyMap.set(hourKey, { sum: item.water_level, count: 1 })
+    }
+  }
+  
+  // Convert map to array with averaged values
+  const result: { measured_at: string; water_level: number }[] = []
+  for (const [hourKey, { sum, count }] of hourlyMap) {
+    const [year, month, day, hour] = hourKey.split('-')
+    const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), 30, 0)
+    result.push({
+      measured_at: date.toISOString(),
+      water_level: Math.round((sum / count) * 100) / 100
+    })
+  }
+  
+  return result.sort((a, b) => new Date(a.measured_at).getTime() - new Date(b.measured_at).getTime())
+}
+
+/**
+ * Aggregate measurements to daily averages
+ */
+function aggregateToDaily(data: { measured_at: string; water_level: number | null }[]) {
+  const dailyMap = new Map<string, { sum: number; count: number }>()
+  
+  for (const item of data) {
+    if (item.water_level === null) continue
+    
+    const date = new Date(item.measured_at)
+    // Create day key: YYYY-MM-DD
+    const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    
+    if (dailyMap.has(dayKey)) {
+      const existing = dailyMap.get(dayKey)!
+      existing.sum += item.water_level
+      existing.count += 1
+    } else {
+      dailyMap.set(dayKey, { sum: item.water_level, count: 1 })
+    }
+  }
+  
+  // Convert map to array with averaged values
+  const result: { measured_at: string; water_level: number }[] = []
+  for (const [dayKey, { sum, count }] of dailyMap) {
+    const [year, month, day] = dayKey.split('-')
+    // Set time to noon for daily aggregates
+    const date = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0)
+    result.push({
+      measured_at: date.toISOString(),
+      water_level: Math.round((sum / count) * 100) / 100
+    })
+  }
+  
+  return result.sort((a, b) => new Date(a.measured_at).getTime() - new Date(b.measured_at).getTime())
 }
 
 /**

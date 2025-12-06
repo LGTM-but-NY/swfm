@@ -103,10 +103,6 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                     <span className="text-white">STN-{station.id.toString().padStart(3, '0')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Sensor Type:</span>
-                    <span className="text-white">Ultrasonic</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-slate-400">Accuracy:</span>
                     <span className="text-white">±2mm</span>
                   </div>
