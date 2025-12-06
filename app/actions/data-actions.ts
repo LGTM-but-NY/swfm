@@ -2,16 +2,18 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { Measurements } from "@/lib/supabase/schema"
 
-export interface DataRecord {
+// View-model for Data Management UI (transformation of Measurements)
+export type DataRecord = {
   id: string
-  date: string
-  time: string
-  station: string
-  value: number
-  unit: string
-  source: "manual" | "automated"
-  status: "verified" | "pending"
+  date: string      // Parsed from measured_at
+  time: string      // Parsed from measured_at
+  station: string   // Joined from stations table
+  value: Measurements['water_level']
+  unit: Measurements['unit']
+  source: Measurements['source']
+  status: Measurements['status']
 }
 
 export async function getDataRecords(): Promise<DataRecord[]> {

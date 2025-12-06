@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
-import { getStations, Station } from "@/app/actions/station-actions"
+import { getStations, StationWithStatus } from "@/app/actions/station-actions"
 import { getDashboardMetrics, DashboardMetrics } from "@/app/actions/dashboard-actions"
 import { checkMLServiceHealth } from "@/app/actions/ml-actions"
 import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield, Cpu, CheckCircle, XCircle } from "lucide-react"
@@ -18,8 +18,8 @@ interface AuthenticatedDashboardProps {
 
 export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
   const [selectedStation, setSelectedStation] = useState("Vientiane")
-  const [selectedStationData, setSelectedStationData] = useState<Station | null>(null)
-  const [stations, setStations] = useState<Station[]>([])
+  const [selectedStationData, setSelectedStationData] = useState<StationWithStatus | null>(null)
+  const [stations, setStations] = useState<StationWithStatus[]>([])
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [mlServiceStatus, setMlServiceStatus] = useState<"online" | "offline" | "checking">("checking")
@@ -58,7 +58,7 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
     }
   }
 
-  const handleStationClick = (station: Station) => {
+  const handleStationClick = (station: StationWithStatus) => {
     setSelectedStation(station.name)
     setSelectedStationData(station)
     setIsModalOpen(true)

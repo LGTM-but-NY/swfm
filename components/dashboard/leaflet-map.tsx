@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { StationWithStatus } from '@/app/actions/station-actions'
 
 // Import CSS for Leaflet
 import 'leaflet/dist/leaflet.css'
@@ -17,19 +18,9 @@ const WMSTileLayer = dynamic(() => import('react-leaflet').then(mod => mod.WMSTi
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
 
-interface WaterStation {
-  id: number
-  name: string
-  lat: number
-  lon: number
-  country: string
-  waterLevel: number
-  status: 'normal' | 'warning' | 'critical'
-}
-
 interface LeafletMapProps {
-  stations: WaterStation[]
-  onStationClick?: (station: WaterStation) => void
+  stations: StationWithStatus[]
+  onStationClick?: (station: StationWithStatus) => void
 }
 
 export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
@@ -89,7 +80,7 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
         {stations.map((station) => (
           <Marker
             key={station.id}
-            position={[station.lat, station.lon]}
+            position={[station.latitude, station.longitude]}
             eventHandlers={{
               click: () => onStationClick?.(station)
             }}

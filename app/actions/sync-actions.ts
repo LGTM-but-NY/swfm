@@ -2,16 +2,17 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { SyncLogs } from "@/lib/supabase/schema"
 
-export interface SyncLog {
-  id: string
-  synced_at: string
-  success_count: number
-  error_count: number
-  details: {
-    results: Array<{ station: string; success: boolean }>
-    errors: Array<{ station: string; error: string }>
-  }
+// Typed details structure for sync logs
+export type SyncLogDetails = {
+  results: Array<{ station: string; success: boolean }>
+  errors: Array<{ station: string; error: string }>
+}
+
+// View-model with typed details field
+export type SyncLog = Omit<SyncLogs, 'details'> & {
+  details: SyncLogDetails | null
 }
 
 /**

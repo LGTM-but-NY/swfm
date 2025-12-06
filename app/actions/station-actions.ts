@@ -2,18 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { Stations } from "@/lib/supabase/schema"
 
-export interface Station {
-  id: number
-  name: string
-  lat: number
-  lon: number
-  country: string
+// View-model extending Stations with computed fields
+export type StationWithStatus = Stations & {
   waterLevel: number
   status: 'normal' | 'warning' | 'critical'
 }
 
-export async function getStations(): Promise<Station[]> {
+export async function getStations(): Promise<StationWithStatus[]> {
   const supabase = await createClient()
   
   const { data: stations, error } = await supabase
@@ -50,12 +47,10 @@ export async function getStations(): Promise<Station[]> {
 
     return {
       ...station,
-      lat: station.latitude,
-      lon: station.longitude,
       country: station.country ?? '',
       waterLevel,
       status
-    }
+    } as StationWithStatus
   }))
 
   return stationsWithStatus

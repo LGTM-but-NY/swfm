@@ -16,10 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
-import { updateUserStatus, deleteUser, getUsers, User } from "@/app/actions/user-actions"
+import { updateUserStatus, deleteUser, getUsers, UserWithRole } from "@/app/actions/user-actions"
 
 export function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserWithRole[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -40,7 +40,7 @@ export function UserManagementPage() {
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   )
 
   const handleStatusChange = async (userId: string, newStatus: "active" | "pending" | "rejected") => {

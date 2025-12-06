@@ -5,13 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LeafletMap } from "@/components/dashboard/leaflet-map"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
-import { getStations, Station } from "@/app/actions/station-actions"
+import { getStations, StationWithStatus } from "@/app/actions/station-actions"
 
 
 export function GuestDashboard() {  
   const [selectedStation, setSelectedStation] = useState<string>("Vientiane")
-  const [selectedStationData, setSelectedStationData] = useState<Station | null>(null)
-  const [stations, setStations] = useState<Station[]>([])
+  const [selectedStationData, setSelectedStationData] = useState<StationWithStatus | null>(null)
+  const [stations, setStations] = useState<StationWithStatus[]>([])
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -36,7 +36,7 @@ export function GuestDashboard() {
     }
   }
 
-  const handleStationClick = (station: Station) => {
+  const handleStationClick = (station: StationWithStatus) => {
     setSelectedStation(station.name)
     setSelectedStationData(station)
     setIsModalOpen(true)

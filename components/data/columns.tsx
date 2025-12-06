@@ -13,17 +13,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Measurements } from "@/lib/supabase/schema"
 
+// View-model for DataTable (extends Measurements with joined/parsed fields)
 export type MeasurementRecord = {
   id: string
-  station_id: number
-  station: string
-  date: string
-  time: string
-  water_level: number | null
-  rainfall_24h: number | null
-  source: "automated" | "manual"
-  status: "verified" | "pending"
+  station_id: Measurements['station_id']
+  station: string  // Joined from stations table
+  date: string     // Parsed from measured_at
+  time: string     // Parsed from measured_at
+  water_level: Measurements['water_level']
+  rainfall_24h: Measurements['rainfall_24h']
+  source: Measurements['source']
+  status: Measurements['status']
 }
 
 export const createColumns = (

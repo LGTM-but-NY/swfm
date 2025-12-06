@@ -6,15 +6,15 @@ interface MapViewProps {
 
 export function MapView({ onStationSelect }: MapViewProps) {
   const stations = [
-    { name: "Jinghong", lat: 22.02, lon: 100.79 },
-    { name: "Chiang Saen", lat: 20.27, lon: 100.08 },
-    { name: "Luang Prabang", lat: 19.88, lon: 102.14 },
-    { name: "Vientiane", lat: 17.97, lon: 102.61 },
-    { name: "Pakse", lat: 15.12, lon: 105.80 },
-    { name: "Stung Treng", lat: 13.57, lon: 105.97 },
-    { name: "Kratie", lat: 12.49, lon: 106.02 },
-    { name: "Tan Chau", lat: 10.78, lon: 105.24 },
-    { name: "Châu Đốc", lat: 10.70, lon: 105.05 },
+    { name: "Jinghong", latitude: 22.02, longitude: 100.79 },
+    { name: "Chiang Saen", latitude: 20.27, longitude: 100.08 },
+    { name: "Luang Prabang", latitude: 19.88, longitude: 102.14 },
+    { name: "Vientiane", latitude: 17.97, longitude: 102.61 },
+    { name: "Pakse", latitude: 15.12, longitude: 105.80 },
+    { name: "Stung Treng", latitude: 13.57, longitude: 105.97 },
+    { name: "Kratie", latitude: 12.49, longitude: 106.02 },
+    { name: "Tan Chau", latitude: 10.78, longitude: 105.24 },
+    { name: "Châu Đốc", latitude: 10.70, longitude: 105.05 },
   ]
 
   return (
@@ -41,7 +41,7 @@ export function MapView({ onStationSelect }: MapViewProps) {
           >
             <p className="text-white font-medium">{station.name}</p>
             <p className="text-slate-400 text-xs">
-              {station.lat.toFixed(2)}°, {station.lon.toFixed(2)}°
+              {station.latitude.toFixed(2)}°, {station.longitude.toFixed(2)}°
             </p>
           </button>
         ))}

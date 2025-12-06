@@ -2,19 +2,21 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { Users, AppRole, Enums } from "@/lib/supabase/schema"
 
-export interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  role: "guest" | "expert" | "admin"
-  status: "active" | "pending" | "rejected"
-  createdAt: string
+// View-model extending Users with role from user_roles table
+export type UserWithRole = {
+  id: Users['id']
+  email: Users['email']
+  status: Enums<'user_status'>
+  role: Enums<'app_role'> | 'guest'
+  // UI-specific formatted fields
+  name: string        // Derived from full_name
+  createdAt: string   // Formatted from created_at
   lastLogin?: string
 }
 
-export async function getUsers(): Promise<User[]> {
+export async function getUsers(): Promise<UserWithRole[]> {
   const supabase = await createClient()
   
   const { data, error } = await supabase

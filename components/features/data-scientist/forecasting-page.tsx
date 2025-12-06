@@ -16,7 +16,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { toast } from "sonner"
 import { Loader2, PlayCircle, Download, RefreshCw, AlertCircle, CheckCircle } from "lucide-react"
 import { getMLModels, getPrediction, checkMLServiceHealth, type MLModel, type PredictionResult } from "@/app/actions/ml-actions"
-import { getStations, type Station } from "@/app/actions/station-actions"
+import { getStations, type StationWithStatus } from "@/app/actions/station-actions"
 import { useAuth } from "@/providers/auth-provider"
 
 const chartConfig = {
@@ -44,7 +44,7 @@ const horizonOptions = [
 export function ForecastingPage() {
   const { role } = useAuth()
   const [models, setModels] = useState<MLModel[]>([])
-  const [stations, setStations] = useState<Station[]>([])
+  const [stations, setStations] = useState<StationWithStatus[]>([])
   const [selectedModel, setSelectedModel] = useState<string>("")
   const [selectedStation, setSelectedStation] = useState<string>("")
   const [horizon, setHorizon] = useState<string>("24")

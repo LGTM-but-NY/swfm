@@ -5,16 +5,10 @@ import { StationChart } from '@/components/dashboard/station-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { StationWithStatus } from '@/app/actions/station-actions'
 
 interface StationDetailModalProps {
-  station: {
-    id: number
-    name: string
-    lat: number
-    lon: number
-    waterLevel: number
-    status: 'normal' | 'warning' | 'critical'
-  } | null
+  station: StationWithStatus | null
   isOpen: boolean
   onClose: () => void
 }
@@ -36,7 +30,7 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-white truncate">{station.name}</h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Coordinates: {station.lat.toFixed(4)}, {station.lon.toFixed(4)}
+              Coordinates: {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0 ml-2 hover:bg-slate-800">

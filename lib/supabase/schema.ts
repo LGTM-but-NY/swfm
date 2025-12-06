@@ -185,67 +185,49 @@ export type Database = {
           },
         ];
       };
-      station_model_configs: {
-        Row: {
-          id: string;
-          station_id: number;
-          model_type: string;
-          config: Json;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          station_id: number;
-          model_type: string;
-          config?: Json;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          station_id?: number;
-          model_type?: string;
-          config?: Json;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "station_model_configs_station_id_fkey";
-            columns: ["station_id"];
-            isOneToOne: false;
-            referencedRelation: "stations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       model_performance: {
         Row: {
           accuracy: number | null;
           evaluated_at: string | null;
           id: string;
           mae: number | null;
-          model_name: string;
+          mape: number | null;
+          model_type: string;
           r2: number | null;
           rmse: number | null;
+          station_id: number | null;
         };
         Insert: {
           accuracy?: number | null;
           evaluated_at?: string | null;
           id?: string;
           mae?: number | null;
-          model_name: string;
+          mape?: number | null;
+          model_type: string;
           r2?: number | null;
           rmse?: number | null;
+          station_id?: number | null;
         };
         Update: {
           accuracy?: number | null;
           evaluated_at?: string | null;
           id?: string;
           mae?: number | null;
-          model_name?: string;
+          mape?: number | null;
+          model_type?: string;
           r2?: number | null;
           rmse?: number | null;
+          station_id?: number | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "model_performance_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       preprocessing_configs: {
         Row: {
@@ -275,25 +257,37 @@ export type Database = {
         Row: {
           actual: number | null;
           analyzed_at: string | null;
+          coefficients: Json | null;
           id: string;
+          mae: number | null;
           predicted: number | null;
+          r2: number | null;
           residual: number | null;
+          rmse: number | null;
           station_id: number | null;
         };
         Insert: {
           actual?: number | null;
           analyzed_at?: string | null;
+          coefficients?: Json | null;
           id?: string;
+          mae?: number | null;
           predicted?: number | null;
+          r2?: number | null;
           residual?: number | null;
+          rmse?: number | null;
           station_id?: number | null;
         };
         Update: {
           actual?: number | null;
           analyzed_at?: string | null;
+          coefficients?: Json | null;
           id?: string;
+          mae?: number | null;
           predicted?: number | null;
+          r2?: number | null;
           residual?: number | null;
+          rmse?: number | null;
           station_id?: number | null;
         };
         Relationships: [
@@ -305,30 +299,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      sync_logs: {
-        Row: {
-          id: string;
-          synced_at: string;
-          success_count: number;
-          error_count: number;
-          details: Json;
-        };
-        Insert: {
-          id?: string;
-          synced_at?: string;
-          success_count?: number;
-          error_count?: number;
-          details?: Json;
-        };
-        Update: {
-          id?: string;
-          synced_at?: string;
-          success_count?: number;
-          error_count?: number;
-          details?: Json;
-        };
-        Relationships: [];
       };
       role_permissions: {
         Row: {
@@ -347,6 +317,38 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"];
         };
         Relationships: [];
+      };
+      station_model_configs: {
+        Row: {
+          config: Json;
+          id: string;
+          model_type: string;
+          station_id: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          config?: Json;
+          id?: string;
+          model_type: string;
+          station_id?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          config?: Json;
+          id?: string;
+          model_type?: string;
+          station_id?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "station_model_configs_station_id_fkey";
+            columns: ["station_id"];
+            isOneToOne: false;
+            referencedRelation: "stations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       stations: {
         Row: {
@@ -390,6 +392,30 @@ export type Database = {
           region?: string | null;
           river?: string | null;
           station_code?: string;
+        };
+        Relationships: [];
+      };
+      sync_logs: {
+        Row: {
+          details: Json | null;
+          error_count: number | null;
+          id: string;
+          success_count: number | null;
+          synced_at: string;
+        };
+        Insert: {
+          details?: Json | null;
+          error_count?: number | null;
+          id?: string;
+          success_count?: number | null;
+          synced_at?: string;
+        };
+        Update: {
+          details?: Json | null;
+          error_count?: number | null;
+          id?: string;
+          success_count?: number | null;
+          synced_at?: string;
         };
         Relationships: [];
       };
@@ -655,13 +681,6 @@ export type InsertModelConfigs =
 export type UpdateModelConfigs =
   Database["public"]["Tables"]["model_configs"]["Update"];
 
-export type StationModelConfigs =
-  Database["public"]["Tables"]["station_model_configs"]["Row"];
-export type InsertStationModelConfigs =
-  Database["public"]["Tables"]["station_model_configs"]["Insert"];
-export type UpdateStationModelConfigs =
-  Database["public"]["Tables"]["station_model_configs"]["Update"];
-
 export type ModelPerformance =
   Database["public"]["Tables"]["model_performance"]["Row"];
 export type InsertModelPerformance =
@@ -683,12 +702,6 @@ export type InsertRegressionAnalysis =
 export type UpdateRegressionAnalysis =
   Database["public"]["Tables"]["regression_analysis"]["Update"];
 
-export type SyncLogs = Database["public"]["Tables"]["sync_logs"]["Row"];
-export type InsertSyncLogs =
-  Database["public"]["Tables"]["sync_logs"]["Insert"];
-export type UpdateSyncLogs =
-  Database["public"]["Tables"]["sync_logs"]["Update"];
-
 export type RolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Row"];
 export type InsertRolePermissions =
@@ -696,9 +709,22 @@ export type InsertRolePermissions =
 export type UpdateRolePermissions =
   Database["public"]["Tables"]["role_permissions"]["Update"];
 
+export type StationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Row"];
+export type InsertStationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Insert"];
+export type UpdateStationModelConfigs =
+  Database["public"]["Tables"]["station_model_configs"]["Update"];
+
 export type Stations = Database["public"]["Tables"]["stations"]["Row"];
 export type InsertStations = Database["public"]["Tables"]["stations"]["Insert"];
 export type UpdateStations = Database["public"]["Tables"]["stations"]["Update"];
+
+export type SyncLogs = Database["public"]["Tables"]["sync_logs"]["Row"];
+export type InsertSyncLogs =
+  Database["public"]["Tables"]["sync_logs"]["Insert"];
+export type UpdateSyncLogs =
+  Database["public"]["Tables"]["sync_logs"]["Update"];
 
 export type UserRoles = Database["public"]["Tables"]["user_roles"]["Row"];
 export type InsertUserRoles =
