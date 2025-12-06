@@ -1,176 +1,288 @@
 "use client"
 
-import { useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useState, useEffect } from 'react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart'
+import { getStationChartData } from '@/app/actions/chart-actions'
 
 interface StationChartProps {
   stationId: number
   stationName: string
 }
 
-// Mock data for chart
-const generateMockData = (days: number) => {
-  const data = []
-  const currentDate = new Date()
-  
-  // Historical actual data
-  for (let i = days; i >= 1; i--) {
-    const date = new Date(currentDate)
-    date.setDate(date.getDate() - i)
-    
-    data.push({
-      time: date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }),
-      actual: Math.round((2 + Math.sin(i * 0.5) * 0.5 + Math.random() * 0.3) * 100) / 100,
-      forecast: null, // No forecast for past data
-      isToday: false
-    })
-  }
-  
-  // Today (both actual and forecast)
-  data.push({
-    time: 'Today',
-    actual: Math.round((2.1 + Math.random() * 0.2) * 100) / 100,
-    forecast: Math.round((2.2 + Math.random() * 0.3) * 100) / 100,
-    isToday: true
-  })
-  
-  // Forecast data (future)
-  for (let i = 1; i <= Math.min(days, 3); i++) {
-    const date = new Date(currentDate)
-    date.setDate(date.getDate() + i)
-    
-    data.push({
-      time: date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }),
-      actual: null, // No actual data for future
-      forecast: Math.round((2.3 + Math.sin(i * 0.3) * 0.4 + Math.random() * 0.2) * 100) / 100,
-      isToday: false
-    })
-  }
-  
-  return data
-}
+const chartConfig = {
+  actual: {
+    label: "Actual",
+    color: "#10B981",
+  },
+  forecast: {
+    label: "Forecast",
+    color: "#3B82F6",
+  },
+} satisfies ChartConfig
+
+// Period options in days
+type PeriodOption = 1 | 7 | 14 | 30 | 90 | 180
+
+const PERIOD_OPTIONS: { value: PeriodOption; label: string }[] = [
+  { value: 1, label: '1 day' },
+  { value: 7, label: '7 days' },
+  { value: 14, label: '14 days' },
+  { value: 30, label: '30 days' },
+  { value: 90, label: '3 months' },
+  { value: 180, label: '6 months' },
+]
 
 export function StationChart({ stationId, stationName }: StationChartProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<1 | 5 | 7>(7)
-  const chartData = generateMockData(selectedPeriod)
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>(7)
+  const [chartData, setChartData] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-medium">{`${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {entry.dataKey === 'actual' ? 'Actual' : 'Forecast'}: {entry.value}m
-            </p>
-          ))}
-        </div>
-      )
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true)
+      try {
+        const { measurements, forecasts } = await getStationChartData(stationId, selectedPeriod)
+        
+        // Combine measurements and forecasts into chart format
+        const data: any[] = []
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        // Add historical measurements with proper time formatting
+        measurements.forEach((m: any) => {
+          const measuredDate = new Date(m.measured_at)
+          
+          // Format based on period
+          let timeLabel: string
+          if (selectedPeriod === 1) {
+            // Show hour:minute for 1-day view
+            timeLabel = measuredDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          } else if (selectedPeriod <= 14) {
+            // Show day/month for up to 14 days
+            timeLabel = measuredDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+          } else if (selectedPeriod <= 30) {
+            // Show day month for 30 days
+            timeLabel = measuredDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          } else {
+            // Show month/year for 3-6 months
+            timeLabel = measuredDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          }
+          
+          data.push({
+            time: timeLabel,
+            timestamp: measuredDate.getTime(),
+            actual: m.water_level ? Math.round(m.water_level * 100) / 100 : null,
+            forecast: null,
+            isToday: measuredDate.toDateString() === today.toDateString()
+          })
+        })
+        
+        // Add forecasts
+        forecasts.forEach((f: any) => {
+          const forecastDate = new Date(f.target_date)
+          const timeLabel = forecastDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+          
+          data.push({
+            time: timeLabel,
+            timestamp: forecastDate.getTime(),
+            actual: null,
+            forecast: f.water_level ? Math.round(f.water_level * 100) / 100 : null,
+            isToday: false
+          })
+        })
+        
+        // Sort by timestamp to ensure proper ordering
+        data.sort((a, b) => a.timestamp - b.timestamp)
+        
+        // Deduplicate by time label for cleaner display (keep last value for each time)
+        const uniqueData = data.reduce((acc: any[], curr) => {
+          const existing = acc.find(item => item.time === curr.time)
+          if (existing) {
+            // Merge values
+            if (curr.actual !== null) existing.actual = curr.actual
+            if (curr.forecast !== null) existing.forecast = curr.forecast
+            if (curr.isToday) existing.isToday = true
+          } else {
+            acc.push({ ...curr })
+          }
+          return acc
+        }, [])
+        
+        setChartData(uniqueData)
+      } catch (error) {
+        console.error('Error fetching chart data:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    return null
+    
+    fetchData()
+  }, [stationId, selectedPeriod])
+
+  // Calculate statistics
+  const currentLevel = chartData.length > 0 
+    ? chartData.filter(d => d.actual !== null).pop()?.actual 
+    : null
+  
+  const latestForecast = chartData.length > 0
+    ? chartData.filter(d => d.forecast !== null)[0]?.forecast
+    : null
+  
+  const trend = chartData.length >= 2
+    ? (() => {
+        const actuals = chartData.filter(d => d.actual !== null)
+        if (actuals.length >= 2) {
+          const last = actuals[actuals.length - 1].actual
+          const prev = actuals[actuals.length - 2].actual
+          return last > prev ? '↗ Rising' : last < prev ? '↘ Falling' : '→ Stable'
+        }
+        return '→ Stable'
+      })()
+    : '→ Stable'
+
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardTitle className="text-base sm:text-lg">{stationName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 sm:h-80 w-full flex items-center justify-center">
+            <div className="animate-pulse text-slate-400">Loading chart data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <CardTitle className="text-base sm:text-lg">{stationName}</CardTitle>
-        <div className="flex gap-1 sm:gap-2 w-full sm:w-auto">
-          <Button
-            variant={selectedPeriod === 1 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedPeriod(1)}
-            className="flex-1 sm:flex-none text-xs sm:text-sm"
+        <div className="flex items-center gap-2">
+          {/* Quick buttons for common periods */}
+          <div className="hidden sm:flex gap-1">
+            <Button
+              variant={selectedPeriod === 1 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod(1)}
+              className="text-xs"
+            >
+              1D
+            </Button>
+            <Button
+              variant={selectedPeriod === 7 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod(7)}
+              className="text-xs"
+            >
+              7D
+            </Button>
+            <Button
+              variant={selectedPeriod === 30 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod(30)}
+              className="text-xs"
+            >
+              1M
+            </Button>
+            <Button
+              variant={selectedPeriod === 90 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod(90)}
+              className="text-xs"
+            >
+              3M
+            </Button>
+          </div>
+          {/* Dropdown for all options */}
+          <Select 
+            value={selectedPeriod.toString()} 
+            onValueChange={(value) => setSelectedPeriod(Number(value) as PeriodOption)}
           >
-            1 day
-          </Button>
-          <Button
-            variant={selectedPeriod === 5 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedPeriod(5)}
-            className="flex-1 sm:flex-none text-xs sm:text-sm"
-          >
-            5 days
-          </Button>
-          <Button
-            variant={selectedPeriod === 7 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedPeriod(7)}
-            className="flex-1 sm:flex-none text-xs sm:text-sm"
-          >
-            7 days
-          </Button>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIOD_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value.toString()}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-64 sm:h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="time" 
-                stroke="#9CA3AF"
-                fontSize={10}
-                interval="preserveStartEnd"
-              />
-              <YAxis 
-                stroke="#9CA3AF"
-                fontSize={10}
-                domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                label={{ 
-                  value: 'Water Level (m)', 
-                  angle: -90, 
-                  position: 'insideLeft', 
-                  style: { textAnchor: 'middle', fill: '#9CA3AF', fontSize: '10px' } 
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                wrapperStyle={{ color: '#9CA3AF', fontSize: '12px' }}
-                iconType="line"
-              />
-              <Line
-                type="monotone"
-                dataKey="actual"
-                stroke="#10B981"
-                strokeWidth={2}
-                dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
-                connectNulls={false}
-                name="Actual"
-              />
-              <Line
-                type="monotone"
-                dataKey="forecast"
-                stroke="#3B82F6"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
-                connectNulls={false}
-                name="Forecast"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+          <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis 
+              dataKey="time" 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => value}
+            />
+            <YAxis 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              domain={['dataMin - 0.5', 'dataMax + 0.5']}
+              tickFormatter={(value) => `${value}m`}
+            />
+            <ChartTooltip 
+              content={
+                <ChartTooltipContent 
+                  formatter={(value, name) => (
+                    <span className="font-medium">{value}m</span>
+                  )}
+                />
+              }
+            />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Line
+              type="monotone"
+              dataKey="actual"
+              stroke="var(--color-actual)"
+              strokeWidth={2}
+              dot={{ fill: "var(--color-actual)", strokeWidth: 2, r: 3 }}
+              connectNulls={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="forecast"
+              stroke="var(--color-forecast)"
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={{ fill: "var(--color-forecast)", strokeWidth: 2, r: 3 }}
+              connectNulls={false}
+            />
+          </LineChart>
+        </ChartContainer>
         
         {/* Quick Statistics */}
         <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-slate-700">
           <div className="text-center">
             <p className="text-[10px] sm:text-xs text-slate-400">Current</p>
             <p className="text-sm sm:text-lg font-bold text-green-400">
-              {chartData.find(d => d.isToday)?.actual}m
+              {currentLevel !== null ? `${currentLevel}m` : 'N/A'}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] sm:text-xs text-slate-400">Today's Forecast</p>
+            <p className="text-[10px] sm:text-xs text-slate-400">Next Forecast</p>
             <p className="text-sm sm:text-lg font-bold text-blue-400">
-              {chartData.find(d => d.isToday)?.forecast}m
+              {latestForecast !== null ? `${latestForecast}m` : 'N/A'}
             </p>
           </div>
           <div className="text-center">
             <p className="text-[10px] sm:text-xs text-slate-400">Trend</p>
             <p className="text-sm sm:text-lg font-bold text-yellow-400">
-              {Math.random() > 0.5 ? '↗ Rising' : '↘ Falling'}
+              {trend}
             </p>
           </div>
         </div>

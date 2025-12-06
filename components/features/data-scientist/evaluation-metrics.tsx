@@ -1,14 +1,59 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Target, Activity } from "lucide-react"
+import { getAggregatedEvaluationMetrics } from "@/app/actions/chart-actions"
 
 export function EvaluationMetrics() {
+  const [metricsData, setMetricsData] = useState({
+    avgAccuracy: 0,
+    avgPrecision: 0,
+    avgRmse: 0,
+    activeStations: 0
+  })
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const data = await getAggregatedEvaluationMetrics()
+        setMetricsData(data)
+      } catch (error) {
+        console.error('Error fetching evaluation metrics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
+
   const metrics = [
-    { label: "Avg Accuracy", value: "91.2%", icon: Target, trend: "up" },
-    { label: "Model Precision", value: "0.945", icon: Activity, trend: "up" },
-    { label: "Forecast RMSE", value: "0.238", icon: TrendingDown, trend: "down" },
-    { label: "Active Stations", value: "12", icon: TrendingUp, trend: "up" },
+    { 
+      label: "Avg Accuracy", 
+      value: isLoading ? "..." : metricsData.avgAccuracy > 0 ? `${metricsData.avgAccuracy}%` : "N/A", 
+      icon: Target, 
+      trend: "up" 
+    },
+    { 
+      label: "Model Precision", 
+      value: isLoading ? "..." : metricsData.avgPrecision > 0 ? metricsData.avgPrecision.toFixed(3) : "N/A", 
+      icon: Activity, 
+      trend: "up" 
+    },
+    { 
+      label: "Forecast RMSE", 
+      value: isLoading ? "..." : metricsData.avgRmse > 0 ? metricsData.avgRmse.toFixed(3) : "N/A", 
+      icon: TrendingDown, 
+      trend: "down" 
+    },
+    { 
+      label: "Active Stations", 
+      value: isLoading ? "..." : metricsData.activeStations.toString(), 
+      icon: TrendingUp, 
+      trend: "up" 
+    },
   ]
 
   return (

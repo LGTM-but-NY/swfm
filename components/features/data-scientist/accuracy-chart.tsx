@@ -1,15 +1,45 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { getAccuracyByStation } from "@/app/actions/chart-actions"
 
 export function AccuracyChart() {
-  const data = [
-    { station: "Chiang Khong", accuracy: 94.2 },
-    { station: "Nong Khai", accuracy: 92.8 },
-    { station: "Vientiane", accuracy: 89.5 },
-    { station: "Pakse", accuracy: 88.2 },
-    { station: "Khone Phapheng", accuracy: 91.5 },
-  ]
+  const [data, setData] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const accuracyData = await getAccuracyByStation()
+        setData(accuracyData)
+      } catch (error) {
+        console.error('Error fetching accuracy data:', error)
+        // Fallback to empty data
+        setData([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[250px]">
+        <div className="animate-pulse text-slate-400">Loading...</div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[250px] text-slate-400">
+        No accuracy data available
+      </div>
+    )
+  }
 
   return (
     <ResponsiveContainer width="100%" height={250}>
