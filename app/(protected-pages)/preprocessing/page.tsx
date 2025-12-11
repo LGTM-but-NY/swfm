@@ -1,6 +1,6 @@
 "use client"
 
-import { PreprocessingConfigPage } from "@/components/features/data-scientist/preprocessing-config"
+import { PreprocessingConfigPageNew } from "@/components/features/data-scientist/preprocessing-config-new"
 import { useAuth } from "@/providers/auth-provider"
 import { redirect } from "next/navigation"
 import { Loader2 } from "lucide-react"
@@ -20,5 +20,5 @@ export default function PreprocessingPage() {
     redirect("/dashboard")
   }
 
-  return <PreprocessingConfigPage />
+  return <PreprocessingConfigPageNew />
 }

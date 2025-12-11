@@ -14,9 +14,10 @@ import {
 import { Line, XAxis, YAxis, CartesianGrid, Area, ComposedChart } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "@/components/ui/chart"
 import { toast } from "sonner"
-import { Loader2, PlayCircle, Download, RefreshCw, AlertCircle, CheckCircle } from "lucide-react"
+import { Loader2, PlayCircle, Download, RefreshCw, AlertCircle, CheckCircle, CloudRain, Wind, Droplets, Thermometer, Clock } from "lucide-react"
 import { getMLModels, getPrediction, checkMLServiceHealth, type MLModel, type PredictionResult } from "@/app/actions/ml-actions"
 import { getStations, type StationWithStatus } from "@/app/actions/station-actions"
+import { getWeatherForecast, type WeatherForecast } from "@/app/actions/weather-actions"
 import { useAuth } from "@/providers/auth-provider"
 
 const chartConfig = {
@@ -52,10 +53,27 @@ export function ForecastingPage() {
   const [isPredicting, setIsPredicting] = useState(false)
   const [prediction, setPrediction] = useState<PredictionResult | null>(null)
   const [serviceStatus, setServiceStatus] = useState<"healthy" | "unhealthy" | "checking">("checking")
+  const [weatherForecast, setWeatherForecast] = useState<WeatherForecast | null>(null)
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false)
+  const [lastWeatherUpdate, setLastWeatherUpdate] = useState<Date | null>(null)
 
   useEffect(() => {
     loadData()
   }, [])
+
+  // Auto-refresh weather forecast every 15 minutes
+  useEffect(() => {
+    if (selectedStation && stations.length > 0) {
+      loadWeatherForecast()
+      
+      // Set up interval for auto-refresh (15 minutes = 900000ms)
+      const intervalId = setInterval(() => {
+        loadWeatherForecast()
+      }, 15 * 60 * 1000)
+
+      return () => clearInterval(intervalId)
+    }
+  }, [selectedStation, stations])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -82,6 +100,31 @@ export function ForecastingPage() {
       toast.error("Failed to load data")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadWeatherForecast = async () => {
+    if (!selectedStation || stations.length === 0) return
+    
+    setIsLoadingWeather(true)
+    try {
+      const station = stations.find(s => s.id.toString() === selectedStation)
+      if (!station) return
+
+      const forecast = await getWeatherForecast(
+        station.latitude,
+        station.longitude,
+        [0, 15, 30, 45, 60, 180, 360, 720, 1440] // Now, 15m, 30m, 45m, 1h, 3h, 6h, 12h, 24h
+      )
+      
+      if (forecast) {
+        setWeatherForecast(forecast)
+        setLastWeatherUpdate(new Date())
+      }
+    } catch (error) {
+      console.error("Failed to load weather forecast:", error)
+    } finally {
+      setIsLoadingWeather(false)
     }
   }
 
@@ -393,6 +436,171 @@ export function ForecastingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Weather Forecast Section */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CloudRain className="w-5 h-5" />
+                Weather Forecast by Station
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                {selectedStationName ? `${selectedStationName} - ` : ""}
+                Real-time weather forecast from Open-Meteo
+                {lastWeatherUpdate && (
+                  <span className="ml-2 text-xs">
+                    (Updated: {lastWeatherUpdate.toLocaleTimeString('en-GB')})
+                  </span>
+                )}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadWeatherForecast}
+              disabled={isLoadingWeather || !selectedStation}
+              className="border-slate-600 text-slate-300"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingWeather ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Station Selection Buttons */}
+          <div className="mb-6">
+            <Label className="text-slate-300 mb-3 block">Select Station</Label>
+            <div className="flex flex-wrap gap-2">
+              {stations.map(station => (
+                <Button
+                  key={station.id}
+                  variant={selectedStation === station.id.toString() ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedStation(station.id.toString())}
+                  disabled={isLoading}
+                  className={
+                    selectedStation === station.id.toString()
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "border-slate-600 text-slate-300 hover:bg-slate-700"
+                  }
+                >
+                  {station.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+          {isLoadingWeather && !weatherForecast ? (
+            <div className="flex items-center justify-center h-32 text-slate-400">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="ml-2">Loading weather forecast...</span>
+            </div>
+          ) : !weatherForecast ? (
+            <div className="flex items-center justify-center h-32 text-slate-400">
+              <div className="text-center">
+                <CloudRain className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Select a station to view weather forecast</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Auto-refresh indicator */}
+              <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/50 px-3 py-2 rounded">
+                <Clock className="w-3 h-3" />
+                <span>Auto-refreshes every 15 minutes</span>
+                <span className="ml-auto">
+                  Next update: {new Date(lastWeatherUpdate!.getTime() + 15 * 60 * 1000).toLocaleTimeString('en-GB')}
+                </span>
+              </div>
+
+              {/* Weather forecast grid */}
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+                {Object.entries(weatherForecast.forecasts).map(([key, forecast]) => {
+                  // Format time label
+                  let timeLabel = key
+                  if (key !== "current") {
+                    const minutes = forecast.minutes_ahead
+                    if (minutes >= 60) {
+                      const hours = minutes / 60
+                      timeLabel = `+${hours}h`
+                    } else {
+                      timeLabel = `+${minutes}m`
+                    }
+                  } else {
+                    timeLabel = "Now"
+                  }
+
+                  return (
+                    <div 
+                      key={key}
+                      className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 hover:bg-slate-900 transition-colors"
+                    >
+                      <div className="text-xs font-semibold text-blue-400 mb-2 text-center">
+                        {timeLabel}
+                      </div>
+                    
+                    {/* Temperature */}
+                    <div className="flex items-center gap-1 mb-1">
+                      <Thermometer className="w-3 h-3 text-red-400" />
+                      <span className="text-white text-sm font-medium">
+                        {forecast.weather.temperature.toFixed(1)}°C
+                      </span>
+                    </div>
+                    
+                    {/* Humidity */}
+                    <div className="flex items-center gap-1 mb-1">
+                      <Droplets className="w-3 h-3 text-blue-400" />
+                      <span className="text-slate-300 text-xs">
+                        {forecast.weather.humidity.toFixed(0)}%
+                      </span>
+                    </div>
+                    
+                    {/* Wind */}
+                    <div className="flex items-center gap-1 mb-1">
+                      <Wind className="w-3 h-3 text-slate-400" />
+                      <span className="text-slate-300 text-xs">
+                        {forecast.weather.wind_speed.toFixed(1)} km/h
+                      </span>
+                    </div>
+                    
+                    {/* Rainfall */}
+                    <div className="flex items-center gap-1">
+                      <CloudRain className="w-3 h-3 text-cyan-400" />
+                      <span className="text-slate-300 text-xs">
+                        {forecast.weather.rainfall_1h.toFixed(1)} mm
+                      </span>
+                    </div>
+                  </div>
+                  )
+                })}
+              </div>
+
+              {/* Additional weather details */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs border-t border-slate-700 pt-4">
+                <div>
+                  <p className="text-slate-400">Location</p>
+                  <p className="text-white">
+                    {weatherForecast.location.latitude.toFixed(4)}, {weatherForecast.location.longitude.toFixed(4)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Elevation</p>
+                  <p className="text-white">{weatherForecast.location.elevation}m</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Timezone</p>
+                  <p className="text-white">{weatherForecast.location.timezone}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400">Data Source</p>
+                  <p className="text-white">Open-Meteo API</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

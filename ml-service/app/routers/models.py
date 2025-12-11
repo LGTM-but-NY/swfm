@@ -9,11 +9,16 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import pickle
 import os
+from supabase import create_client, Client
 
 from app.config import get_settings
+from app.schemas.training import ModelSyncRequest, ModelSyncResponse, ModelMetrics
 
 router = APIRouter()
 settings = get_settings()
+
+# Initialize Supabase client
+supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 
 
 class ModelUploadResponse(BaseModel):
@@ -31,6 +36,9 @@ class ModelInfo(BaseModel):
     run_id: str
     created_at: str
     description: Optional[str] = None
+    accuracy: Optional[float] = None
+    data_shape: Optional[str] = None
+    scaler: Optional[str] = None
 
 
 class ModelListResponse(BaseModel):
@@ -152,7 +160,7 @@ async def upload_model(
 
 @router.get("", response_model=ModelListResponse)
 async def list_models():
-    """List all registered models"""
+    """List all registered models with metrics from MLflow"""
     client = MlflowClient()
 
     try:
@@ -164,16 +172,54 @@ async def list_models():
             versions = client.search_model_versions(f"name='{rm.name}'")
             if versions:
                 latest = max(versions, key=lambda v: int(v.version))
-                models.append(
-                    ModelInfo(
-                        name=rm.name,
-                        version=latest.version,
-                        stage=latest.current_stage,
-                        run_id=latest.run_id,
-                        created_at=str(latest.creation_timestamp),
-                        description=rm.description,
-                    )
+                
+                # Get metrics and params from the run
+                try:
+                    run = client.get_run(latest.run_id)
+                    r2_score = run.data.metrics.get('r2_score', run.data.metrics.get('test_r2'))
+                    
+                    # Get train/test sample counts from run params/tags
+                    train_samples = run.data.params.get('train_samples') or run.data.tags.get('train_samples')
+                    test_samples = run.data.params.get('test_samples') or run.data.tags.get('test_samples')
+                    
+                    if train_samples and test_samples:
+                        data_shape = f"Train: {train_samples} / Test: {test_samples}"
+                    else:
+                        data_shape = None
+                    
+                    # Get scaler type by checking if scaler artifact exists
+                    scaler_type = None
+                    try:
+                        import joblib
+                        scaler_path = client.download_artifacts(latest.run_id, "preprocessing/scaler.pkl")
+                        scaler_obj = joblib.load(scaler_path)
+                        scaler_type = type(scaler_obj).__name__
+                    except:
+                        scaler_type = "None"
+                        
+                except:
+                    r2_score = None
+                    data_shape = None
+                    scaler_type = None
+                
+                model_info = ModelInfo(
+                    name=rm.name,
+                    version=latest.version,
+                    stage=latest.current_stage,
+                    run_id=latest.run_id,
+                    created_at=str(latest.creation_timestamp),
+                    description=rm.description,
                 )
+                
+                # Add accuracy and data shape to the model info
+                if r2_score is not None:
+                    model_info.accuracy = r2_score
+                if data_shape is not None:
+                    model_info.data_shape = data_shape
+                if scaler_type is not None:
+                    model_info.scaler = scaler_type
+                    
+                models.append(model_info)
 
         return ModelListResponse(models=models, total=len(models))
 
@@ -267,3 +313,180 @@ async def delete_model(model_name: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete model: {str(e)}")
+
+
+@router.post("/sync-from-db", response_model=ModelSyncResponse)
+async def sync_model_from_database(request: ModelSyncRequest):
+    """
+    Sync a trained model from Supabase to MLflow Model Registry.
+    
+    This endpoint:
+    - Fetches model performance data from Supabase using the run_id
+    - Loads the corresponding model from MLflow tracking
+    - Registers it in MLflow Model Registry with proper naming and tags
+    - Optionally promotes it to Staging or Production stage
+    
+    Use this to promote best-performing models from training to production.
+    
+    Example:
+    ```json
+    {
+        "run_id": "abc123def456",
+        "register_name": "water-level-predictor",
+        "stage": "Production"
+    }
+    ```
+    """
+    client = MlflowClient()
+    
+    try:
+        # 1. Fetch model performance from Supabase
+        print(f"🔍 Fetching model data for run_id: {request.run_id}")
+        perf_data = supabase.table('model_performance')\
+            .select('*')\
+            .eq('id', request.run_id)\
+            .execute()
+        
+        if not perf_data.data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No model found with run_id: {request.run_id}"
+            )
+        
+        model_record = perf_data.data[0]
+        
+        # Extract model info from model_type (e.g., "linear_60min" -> "linear", 60)
+        model_type_full = model_record['model_type']
+        if '_' in model_type_full and 'min' in model_type_full:
+            model_type, horizon_str = model_type_full.rsplit('_', 1)
+            horizon_minutes = int(horizon_str.replace('min', ''))
+        else:
+            model_type = model_type_full
+            horizon_minutes = 60  # default
+        
+        station_id = model_record['station_id']
+        station_id = None if station_id == 0 else station_id  # Convert 0 back to None for unified models
+        
+        # 2. Load model from MLflow tracking
+        print(f"📦 Loading model from MLflow run: {request.run_id}")
+        try:
+            run = client.get_run(request.run_id)
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"MLflow run not found: {request.run_id}. Error: {str(e)}"
+            )
+        
+        # 3. Generate model name if not provided
+        if request.register_name:
+            model_name = request.register_name
+        else:
+            station_tag = f"station{station_id}" if station_id is not None else "unified"
+            model_name = f"swfm-{model_type}-{station_tag}-{horizon_minutes}min"
+        
+        # 4. Register model in Model Registry
+        print(f"📝 Registering model as: {model_name}")
+        
+        # Get the model URI from the run
+        model_uri = f"runs:/{request.run_id}/model"
+        
+        try:
+            # Register the model
+            model_version = mlflow.register_model(
+                model_uri=model_uri,
+                name=model_name
+            )
+            version = model_version.version
+            
+            # Add tags with metadata
+            client.set_model_version_tag(
+                name=model_name,
+                version=version,
+                key="station_id",
+                value=str(station_id) if station_id is not None else "unified"
+            )
+            client.set_model_version_tag(
+                name=model_name,
+                version=version,
+                key="model_type",
+                value=model_type
+            )
+            client.set_model_version_tag(
+                name=model_name,
+                version=version,
+                key="horizon_minutes",
+                value=str(horizon_minutes)
+            )
+            client.set_model_version_tag(
+                name=model_name,
+                version=version,
+                key="rmse",
+                value=str(model_record['rmse'])
+            )
+            client.set_model_version_tag(
+                name=model_name,
+                version=version,
+                key="r2",
+                value=str(model_record['r2'])
+            )
+            
+            # Update model description
+            station_desc = f"Station {station_id}" if station_id is not None else "All stations (unified)"
+            description = f"{model_type.title()} regression model for {station_desc}, {horizon_minutes}-min horizon. RMSE: {model_record['rmse']:.4f}, R²: {model_record['r2']:.4f}"
+            client.update_model_version(
+                name=model_name,
+                version=version,
+                description=description
+            )
+            
+            print(f"✅ Model registered: {model_name} v{version}")
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to register model: {str(e)}"
+            )
+        
+        # 5. Promote to stage if requested
+        if request.stage and request.stage != "None":
+            print(f"🚀 Promoting to {request.stage}...")
+            try:
+                client.transition_model_version_stage(
+                    name=model_name,
+                    version=version,
+                    stage=request.stage
+                )
+            except Exception as e:
+                # Don't fail if promotion fails
+                print(f"⚠️  Warning: Failed to promote to {request.stage}: {str(e)}")
+        
+        # 6. Prepare response
+        metrics = ModelMetrics(
+            rmse=float(model_record['rmse']),
+            mae=float(model_record['mae']),
+            r2=float(model_record['r2'])
+        )
+        
+        return ModelSyncResponse(
+            success=True,
+            run_id=request.run_id,
+            model_name=model_name,
+            model_version=int(version),
+            model_type=model_type,
+            station_id=station_id,
+            horizon_minutes=horizon_minutes,
+            metrics=metrics,
+            stage=request.stage,
+            message=f"Model successfully registered as '{model_name}' v{version} (stage: {request.stage})"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error syncing model: {error_details}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to sync model from database: {str(e)}"
+        )

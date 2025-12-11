@@ -23,6 +23,8 @@ export async function getStations(): Promise<StationWithStatus[]> {
       longitude,
       country
     `)
+    .neq('id', 0)  // Exclude station 0 (global/unified model tracking)
+    .not('id', 'in', '(1,7)')  // Exclude stations 1 and 7 (problematic stations)
     .order('name')
 
   if (error) {

@@ -38,7 +38,11 @@ env/
 
 # MLflow
 mlflow.db
+mlflow.log
 mlartifacts/
+mlruns/
+*.db-shm
+*.db-wal
 
 # Models (local)
 models/*.pkl

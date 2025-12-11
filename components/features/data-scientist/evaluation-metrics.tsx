@@ -31,19 +31,19 @@ export function EvaluationMetrics() {
 
   const metrics = [
     { 
-      label: "Avg Accuracy", 
-      value: isLoading ? "..." : metricsData.avgAccuracy > 0 ? `${metricsData.avgAccuracy}%` : "N/A", 
+      label: "Avg Accuracy (R²)", 
+      value: isLoading ? "..." : metricsData.avgAccuracy > 0 ? `${metricsData.avgAccuracy.toFixed(1)}%` : "N/A", 
       icon: Target, 
       trend: "up" 
     },
     { 
-      label: "Model Precision", 
+      label: "Avg R² Score", 
       value: isLoading ? "..." : metricsData.avgPrecision > 0 ? metricsData.avgPrecision.toFixed(3) : "N/A", 
       icon: Activity, 
       trend: "up" 
     },
     { 
-      label: "Forecast RMSE", 
+      label: "Avg RMSE", 
       value: isLoading ? "..." : metricsData.avgRmse > 0 ? metricsData.avgRmse.toFixed(3) : "N/A", 
       icon: TrendingDown, 
       trend: "down" 

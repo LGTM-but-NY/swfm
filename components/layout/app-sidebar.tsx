@@ -37,7 +37,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         { title: "Forecasting", url: "/forecast" },
         { title: "Model Registry", url: "/models" },
-        { title: "Tune Parameters", url: "/tune" },
         { title: "Model Evaluation", url: "/evaluation" },
         { title: "Preprocessing", url: "/preprocessing" },
       ],
