@@ -61,7 +61,11 @@ export async function getDataRecords(): Promise<DataRecord[]> {
 
 export async function getStations() {
     const supabase = await createClient()
-    const { data } = await supabase.from('stations').select('name').order('name')
+    const { data } = await supabase
+        .from('stations')
+        .select('name')
+        .not('id', 'in', '(1,7)')  // Exclude stations 1 and 7 (problematic stations)
+        .order('name')
     return data?.map(s => s.name) || []
 }
 

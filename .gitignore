@@ -25,3 +25,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# MLflow artifacts (ml-service)
+ml-service/mlartifacts/
+ml-service/mlruns/
+ml-service/mlflow.db
+ml-service/mlflow.log
+ml-service/*.db-shm
+ml-service/*.db-wal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+ml-service/venv/
+ml-service/.venv/
+ml-service/ENV/
+ml-service/env/

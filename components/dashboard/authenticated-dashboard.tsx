@@ -7,21 +7,24 @@ import { LeafletMap } from "@/components/dashboard/leaflet-map"
 import { StationDetailModal } from "@/components/dashboard/station-detail-modal"
 import { getStations, StationWithStatus } from "@/app/actions/station-actions"
 import { getDashboardMetrics, DashboardMetrics } from "@/app/actions/dashboard-actions"
-import { checkMLServiceHealth } from "@/app/actions/ml-actions"
-import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield, Cpu, CheckCircle, XCircle } from "lucide-react"
+import { checkMLServiceHealth, generateForecasts } from "@/app/actions/ml-actions"
+import { Activity, AlertTriangle, Droplets, Wind, Users, Database, Settings, Shield, Cpu, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 interface AuthenticatedDashboardProps {
   role: "expert" | "admin"
 }
 
 export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
-  const [selectedStation, setSelectedStation] = useState("Vientiane")
+  const [selectedStation, setSelectedStation] = useState<string>("")
+  const [selectedStationId, setSelectedStationId] = useState<number | undefined>(undefined)
   const [selectedStationData, setSelectedStationData] = useState<StationWithStatus | null>(null)
   const [stations, setStations] = useState<StationWithStatus[]>([])
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [mlServiceStatus, setMlServiceStatus] = useState<"online" | "offline" | "checking">("checking")
+  const [isGeneratingForecast, setIsGeneratingForecast] = useState(false)
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     activeStations: 0,
     floodAlerts: 0,
@@ -51,6 +54,13 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
       setStations(stationsData)
       setMetrics(metricsData)
       setMlServiceStatus(mlHealth.status === "healthy" ? "online" : "offline")
+      
+      // Set default station if available and not already set
+      if (stationsData.length > 0 && !selectedStationId) {
+        const defaultStation = stationsData[0]
+        setSelectedStationId(defaultStation.id)
+        setSelectedStation(defaultStation.name)
+      }
     } catch (error) {
       console.error("Error fetching data:", error)
       setMlServiceStatus("offline")
@@ -59,6 +69,7 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
 
   const handleStationClick = (station: StationWithStatus) => {
     setSelectedStation(station.name)
+    setSelectedStationId(station.id)
     setSelectedStationData(station)
     setIsModalOpen(true)
   }
@@ -66,6 +77,87 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
   const closeModal = () => {
     setIsModalOpen(false)
     setSelectedStationData(null)
+  }
+
+  const handleGenerateForecast = async () => {
+    if (!selectedStationId) {
+      toast.error("Please select a station first", {
+        description: "Click on a station marker on the map"
+      })
+      return
+    }
+
+    setIsGeneratingForecast(true)
+    try {
+      const result = await generateForecasts(selectedStationId, [15, 30, 45, 60], true)
+      
+      if (result.forecasts_generated > 0) {
+        toast.success(`Forecast generated!`, {
+          description: `${result.forecasts_generated} forecasts saved for ${selectedStation}`
+        })
+        // Refresh the page to show new forecasts
+        fetchData()
+      } else {
+        toast.warning("No forecasts generated", {
+          description: "Please train models first at /models page"
+        })
+      }
+    } catch (error) {
+      console.error("Error generating forecast:", error)
+      
+      // Extract error message from the response
+      let errorMessage = "Unknown error"
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      toast.error("Failed to generate forecast", {
+        description: errorMessage
+      })
+    } finally {
+      setIsGeneratingForecast(false)
+    }
+  }
+
+  const handleGenerateForecastForAll = async () => {
+    setIsGeneratingForecast(true)
+    try {
+      let totalForecasts = 0
+      let successCount = 0
+      let failCount = 0
+      
+      // Generate forecasts for each station
+      for (const station of stations) {
+        try {
+          const result = await generateForecasts(station.id, [15, 30, 45, 60], true)
+          if (result.forecasts_generated > 0) {
+            totalForecasts += result.forecasts_generated
+            successCount++
+          }
+        } catch (error) {
+          console.error(`Error generating forecast for station ${station.id}:`, error)
+          failCount++
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`Forecasts generated for all stations!`, {
+          description: `${totalForecasts} forecasts saved across ${successCount} stations`
+        })
+        fetchData()
+      } else {
+        toast.error("Failed to generate forecasts", {
+          description: `Could not generate forecasts for any station. ${failCount} failed.`
+        })
+      }
+    } catch (error) {
+      console.error("Error generating forecasts:", error)
+      toast.error("Failed to generate forecasts for all stations")
+    } finally {
+      setIsGeneratingForecast(false)
+    }
   }
 
   return (
@@ -190,6 +282,41 @@ export function AuthenticatedDashboard({ role }: AuthenticatedDashboardProps) {
                     stations={stations}
                     onStationClick={handleStationClick}
                   />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800 border-slate-700">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white">Forecast Comparison</CardTitle>
+                    <CardDescription className="text-slate-400">
+                      {selectedStation || "Select a station"} - Model Comparison
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleGenerateForecast} 
+                      disabled={isGeneratingForecast || !selectedStationId}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingForecast ? 'animate-spin' : ''}`} />
+                      Generate
+                    </Button>
+                    <Button 
+                      onClick={handleGenerateForecastForAll} 
+                      disabled={isGeneratingForecast}
+                      size="sm"
+                      variant="outline"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingForecast ? 'animate-spin' : ''}`} />
+                      All Stations
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ForecastChart station={selectedStation} stationId={selectedStationId} />
                 </CardContent>
               </Card>
             </div>

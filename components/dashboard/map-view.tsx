@@ -6,13 +6,13 @@ interface MapViewProps {
 
 export function MapView({ onStationSelect }: MapViewProps) {
   const stations = [
-    { name: "Jinghong", latitude: 22.02, longitude: 100.79 },
+    // Station 1 (Jinghong) - EXCLUDED (problematic data)
     { name: "Chiang Saen", latitude: 20.27, longitude: 100.08 },
     { name: "Luang Prabang", latitude: 19.88, longitude: 102.14 },
     { name: "Vientiane", latitude: 17.97, longitude: 102.61 },
     { name: "Pakse", latitude: 15.12, longitude: 105.80 },
     { name: "Stung Treng", latitude: 13.57, longitude: 105.97 },
-    { name: "Kratie", latitude: 12.49, longitude: 106.02 },
+    // Station 7 (Kratie) - EXCLUDED (problematic data)
     { name: "Tan Chau", latitude: 10.78, longitude: 105.24 },
     { name: "Châu Đốc", latitude: 10.70, longitude: 105.05 },
   ]

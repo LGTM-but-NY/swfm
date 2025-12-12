@@ -8,8 +8,9 @@ from contextlib import asynccontextmanager
 import mlflow
 
 from app.config import get_settings
-from app.routers import models, predict, health
+from app.routers import models, predict, health, data, weather, preprocessing, training, evaluation
 
+import os
 
 settings = get_settings()
 
@@ -21,12 +22,11 @@ async def lifespan(app: FastAPI):
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     
     # Create artifact directory if it doesn't exist
-    import os
     os.makedirs(settings.mlflow_artifact_root, exist_ok=True)
     os.makedirs(settings.models_dir, exist_ok=True)
     
-    print(f"✓ MLflow tracking URI: {settings.mlflow_tracking_uri}")
-    print(f"✓ Models directory: {settings.models_dir}")
+    print(f"MLflow tracking URI: {settings.mlflow_tracking_uri}")
+    print(f"Models directory: {settings.models_dir}")
     
     yield
     
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    description="ML Service for Water Level Forecasting with MLflow integration",
+    description="ML Service for Water Level Forecasting with MLflow integration and Data Merging API",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -54,6 +54,11 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(models.router, prefix="/models", tags=["Models"])
 app.include_router(predict.router, prefix="/predict", tags=["Predictions"])
+app.include_router(data.router, prefix="/data", tags=["Data"])
+app.include_router(weather.router, prefix="/weather", tags=["Weather"])
+app.include_router(preprocessing.router, prefix="/preprocessing", tags=["Preprocessing"])
+app.include_router(training.router, prefix="/training", tags=["Training"])
+app.include_router(evaluation.router, prefix="/evaluation", tags=["Evaluation"])
 
 
 @app.get("/")
@@ -62,5 +67,6 @@ async def root():
         "service": settings.app_name,
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
+        "mlflow_ui": settings.mlflow_tracking_uri
     }

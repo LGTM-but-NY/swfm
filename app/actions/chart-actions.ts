@@ -109,18 +109,25 @@ export async function getStationChartData(stationId: number, days: number) {
     measurements = aggregateToDaily(data || [])
   }
   
-  // Get forecast data (future predictions)
+  // Get forecast data (including past predictions to see model performance)
+  // Filter to show forecasts from the time range we're viewing
   const { data: forecasts, error: forecastsError } = await supabase
     .from('forecasts')
-    .select('target_date, water_level, model_id')
+    .select('target_date, water_level, model_id, forecast_date')
     .eq('station_id', stationId)
-    .gte('target_date', new Date().toISOString())
+    .gte('target_date', startDate.toISOString())
+    .lte('target_date', endDate.toISOString())
     .order('target_date', { ascending: true })
-    .limit(Math.min(days, 7)) // Limit to next 7 days max
   
   if (forecastsError) {
     console.error('Error fetching forecasts:', forecastsError)
     return { measurements: measurements, forecasts: [] }
+  }
+  
+  console.log(`📊 Fetched ${forecasts?.length || 0} forecasts for station ${stationId}`)
+  if (forecasts && forecasts.length > 0) {
+    console.log('First forecast:', forecasts[0])
+    console.log('Last forecast:', forecasts[forecasts.length - 1])
   }
   
   return {
@@ -234,18 +241,60 @@ export async function getForecastComparisonData(stationId: number) {
 
 /**
  * Get accuracy metrics by station
- * Returns hardcoded mock data until model performance data is populated
+ * Returns R² scores converted to percentage by station
+ * Shows all stations, even those without performance data
  */
 export async function getAccuracyByStation() {
-  // TODO: This will work once model_performance table is populated and schema is updated
-  // For now, return mock data to avoid errors
-  return [
-    { station: "Chiang Khong", accuracy: 94.2 },
-    { station: "Nong Khai", accuracy: 92.8 },
-    { station: "Vientiane", accuracy: 89.5 },
-    { station: "Pakse", accuracy: 88.2 },
-    { station: "Khone Phapheng", accuracy: 91.5 },
-  ]
+  const supabase = await createClient()
+  
+  // Get all stations first
+  const { data: stations, error: stationsError } = await supabase
+    .from('stations')
+    .select('id, name')
+    .eq('is_deleted', false)
+    .order('name', { ascending: true })
+  
+  if (stationsError) {
+    console.error('Error fetching stations:', stationsError)
+    return []
+  }
+  
+  if (!stations || stations.length === 0) {
+    return []
+  }
+  
+  // Get model performance data for all stations
+  const { data: performanceData, error: perfError } = await supabase
+    .from('model_performance')
+    .select('r2, station_id, evaluated_at')
+    .order('evaluated_at', { ascending: false })
+  
+  if (perfError) {
+    console.error('Error fetching performance data:', perfError)
+  }
+  
+  // Group performance by station and get the best R² for each
+  const stationPerformanceMap = new Map<number, number>()
+  
+  if (performanceData && performanceData.length > 0) {
+    for (const item of performanceData) {
+      if (item.station_id && item.r2 !== null) {
+        if (!stationPerformanceMap.has(item.station_id) || 
+            (stationPerformanceMap.get(item.station_id)! < item.r2)) {
+          stationPerformanceMap.set(item.station_id, item.r2)
+        }
+      }
+    }
+  }
+  
+  // Map all stations with their performance data
+  return stations.map(station => {
+    const r2 = stationPerformanceMap.get(station.id)
+    return {
+      station: station.name,
+      accuracy: r2 !== undefined ? Math.round(r2 * 100 * 10) / 10 : 0
+    }
+  }).filter(item => item.accuracy > 0) // Only show stations with data
 }
 
 /**
@@ -300,16 +349,14 @@ export async function getAggregatedEvaluationMetrics() {
   }
   
   // Calculate averages
-  const avgAccuracy = performanceData && performanceData.length > 0
-    ? performanceData.reduce((sum, p) => sum + (p.accuracy || 0), 0) / performanceData.length
+  const avgR2 = performanceData && performanceData.length > 0
+    ? performanceData.reduce((sum, p) => sum + (p.r2 || 0), 0) / performanceData.length
     : 0
+  
+  const avgAccuracy = avgR2 * 100 // Convert R² to percentage
   
   const avgRmse = performanceData && performanceData.length > 0
     ? performanceData.reduce((sum, p) => sum + (p.rmse || 0), 0) / performanceData.length
-    : 0
-  
-  const avgR2 = performanceData && performanceData.length > 0
-    ? performanceData.reduce((sum, p) => sum + (p.r2 || 0), 0) / performanceData.length
     : 0
   
   return {

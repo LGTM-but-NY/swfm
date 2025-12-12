@@ -42,12 +42,26 @@ export function AccuracyChart() {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={400}>
+      <BarChart data={data} margin={{ bottom: 80, left: 10, right: 10, top: 20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-        <XAxis dataKey="station" stroke="#94a3b8" angle={-45} textAnchor="end" height={80} />
-        <YAxis stroke="#94a3b8" domain={[80, 100]} />
-        <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #475569" }} />
+        <XAxis 
+          dataKey="station" 
+          stroke="#94a3b8" 
+          angle={-45} 
+          textAnchor="end" 
+          height={100}
+          interval={0}
+        />
+        <YAxis 
+          stroke="#94a3b8" 
+          domain={[0, 100]} 
+          label={{ value: 'Accuracy (R²) %', angle: -90, position: 'insideLeft' }}
+        />
+        <Tooltip 
+          contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #475569" }}
+          formatter={(value: number) => [`${value.toFixed(1)}%`, 'Accuracy']}
+        />
         <Bar dataKey="accuracy" fill="#3b82f6" radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
