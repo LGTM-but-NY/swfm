@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 
 export interface DashboardMetrics {
   activeStations: number
-  floodAlerts: number
+  warningAlerts: number
+  criticalAlerts: number
   avgWaterLevel: number | null
   rainfall24h: number | null
 }
@@ -12,33 +13,14 @@ export interface DashboardMetrics {
 /**
  * Get aggregated dashboard metrics from the database
  * - Active stations count
- * - Flood alerts (stations where water_level > alarm_level)
+ * - Warning alerts (stations at/above alarm level)
+ * - Critical alerts (stations at/above flood level)
  * - Average water level across all stations
  * - Total rainfall in last 24 hours
  */
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const supabase = await createClient()
-  
-  // Get active stations count
-  const { count: stationCount, error: stationError } = await supabase
-    .from('stations')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_deleted', false)
-  
-  if (stationError) {
-    console.error('Error fetching station count:', stationError)
-  }
-
-  // Get stations with alarm/flood levels for alert calculation
-  const { data: stationsWithLevels, error: levelsError } = await supabase
-    .from('stations')
-    .select('id, name, alarm_level, flood_level')
-    .eq('is_deleted', false)
-    .not('alarm_level', 'is', null)
-  
-  if (levelsError) {
-    console.error('Error fetching station levels:', levelsError)
-  }
+  const excludedStationIds = '(0,1,7)'
 
   // Get latest measurements for each station (last 24 hours)
   const yesterday = new Date()
@@ -48,34 +30,17 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     .from('station_measurements')
     .select('station_id, water_level, rainfall_24h')
     .gte('measured_at', yesterday.toISOString())
+    .not('station_id', 'in', excludedStationIds)
     .order('measured_at', { ascending: false })
   
   if (measurementsError) {
     console.error('Error fetching measurements:', measurementsError)
   }
 
-  // Calculate flood alerts
-  let floodAlerts = 0
-  if (stationsWithLevels && recentMeasurements) {
-    const latestByStation = new Map<number, { water_level: number | null }>()
-    
-    // Get latest measurement per station
-    recentMeasurements.forEach(m => {
-      if (!latestByStation.has(m.station_id)) {
-        latestByStation.set(m.station_id, { water_level: m.water_level })
-      }
-    })
-    
-    // Count stations where water_level > alarm_level
-    stationsWithLevels.forEach(station => {
-      const measurement = latestByStation.get(station.id)
-      if (measurement?.water_level && station.alarm_level) {
-        if (measurement.water_level > station.alarm_level) {
-          floodAlerts++
-        }
-      }
-    })
-  }
+  // Alert counts (warning/critical) are computed client-side from station status
+  // to stay consistent with map marker colors.
+  const warningAlerts = 0
+  const criticalAlerts = 0
 
   // Calculate average water level
   let avgWaterLevel: number | null = null
@@ -106,8 +71,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   }
 
   return {
-    activeStations: stationCount || 0,
-    floodAlerts,
+    activeStations: 0,
+    warningAlerts,
+    criticalAlerts,
     avgWaterLevel,
     rainfall24h
   }

@@ -99,6 +99,7 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - TRAIN_INTERVAL=${TRAIN_INTERVAL:-3600}
+      - ML_SERVICE_URL=http://ml-api:8000
     volumes:
       - ./apps/ml-service/pretrain_and_predict.py:/app/pretrain_and_predict.py
       - ./apps/ml-service/auto_train_predict.py:/app/auto_train_predict.py
@@ -108,13 +109,24 @@ services:
     depends_on:
       ml-api:
         condition: service_healthy
+    healthcheck:
+      # `pgrep` isn't available in the base image; use Python + /proc for a portable healthcheck.
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import pathlib,sys; needle='auto_train_predict.py'; procs=pathlib.Path('/proc').glob('[0-9]*/cmdline'); ok=any(needle in p.read_text(errors='ignore') for p in procs); sys.exit(0 if ok else 1)\"",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     networks:
       - swfm-network
     restart: unless-stopped
     command: >
       sh -c "
         echo 'Waiting for ML API to be ready...' &&
-        sleep 10 &&
+        sleep 5 &&
         echo 'Running initial training...' &&
         python pretrain_and_predict.py &&
         echo 'Starting auto-training service...' &&

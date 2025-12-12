@@ -48,11 +48,14 @@ export async function getMLPredictionForChart(
  * - 7 days: Hourly averages (~168 points)
  * - 14+ days: Daily averages (14-180 points)
  */
-export async function getStationChartData(stationId: number, days: number) {
+export async function getStationChartData(stationId: number, days: number, futureMinutes: number = 0) {
   const supabase = await createClient()
   
   // Calculate date range
   const endDate = new Date()
+  const forecastEndDate = futureMinutes > 0
+    ? new Date(endDate.getTime() + futureMinutes * 60 * 1000)
+    : endDate
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
   
@@ -116,7 +119,7 @@ export async function getStationChartData(stationId: number, days: number) {
     .select('target_date, water_level, forecast_date')
     .eq('station_id', stationId)
     .gte('target_date', startDate.toISOString())
-    .lte('target_date', endDate.toISOString())
+    .lte('target_date', forecastEndDate.toISOString())
     .order('target_date', { ascending: true })
   
   if (forecastsError) {

@@ -11,12 +11,12 @@ import requests
 import json
 import time
 from datetime import datetime
-
+import os
 # Configuration
-ML_SERVICE_URL = "http://localhost:8000"
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8000")
 TRAIN_HORIZONS = [15, 30, 45, 60]  # Training horizons in minutes
 PREDICT_HORIZONS = [15, 30, 45, 60]  # Prediction horizons
-STATIONS_TO_PREDICT = [2, 3, 4, 5, 6, 8, 9]  # Active stations (excluding 1 and 7)
+STATIONS_TO_PREDICT = [2, 3, 4, 5, 6, 8, 9, 15]  # Fallback stations (excluded: 0, 1, 7)
 # Dates will be auto-determined from training_data_range config in database
 
 def print_header(text):
