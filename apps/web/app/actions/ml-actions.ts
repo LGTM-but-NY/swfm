@@ -235,17 +235,36 @@ export async function deleteMLModel(modelName: string): Promise<{ success: boole
  */
 export async function checkMLServiceHealth(): Promise<{ status: string; mlflow: string }> {
   try {
+    // Add timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    
+    console.log('[ML Health Check] Attempting to connect to:', ML_SERVICE_URL)
+    
     const response = await fetch(`${ML_SERVICE_URL}/health`, {
       method: 'GET',
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: controller.signal
     })
     
+    clearTimeout(timeoutId)
+    
+    console.log('[ML Health Check] Response status:', response.status)
+    
     if (!response.ok) {
+      console.error('[ML Health Check] Unhealthy response:', response.statusText)
       return { status: 'unhealthy', mlflow: 'unreachable' }
     }
     
-    return await response.json()
-  } catch {
+    const data = await response.json()
+    console.log('[ML Health Check] Success:', data)
+    return data
+  } catch (error) {
+    console.error('[ML Health Check] Error:', error)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[ML Health Check] Request timed out after 10 seconds')
+      return { status: 'timeout', mlflow: 'timeout' }
+    }
     return { status: 'unreachable', mlflow: 'unknown' }
   }
 }

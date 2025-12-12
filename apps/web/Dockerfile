@@ -1,4 +1,6 @@
 # Next.js App Dockerfile
+# syntax=docker/dockerfile:1
+
 FROM node:20-alpine AS base
 
 # Install dependencies
@@ -13,8 +15,9 @@ RUN corepack enable pnpm
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* .npmrc* ./
 COPY apps/web/package.json ./apps/web/
 
-# Fetch dependencies to pnpm store (no symlinking yet)
-RUN pnpm fetch --frozen-lockfile
+# Install dependencies with cache mount for faster rebuilds
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Build stage
 FROM base AS builder
@@ -27,11 +30,8 @@ RUN corepack enable pnpm
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* .npmrc* ./
 COPY apps/web/package.json ./apps/web/
 
-# Copy pnpm store from deps stage
-COPY --from=deps /root/.local/share/pnpm/store /root/.local/share/pnpm/store
-
-# Install dependencies from cached store using hoisted linking
-RUN pnpm install --frozen-lockfile --offline
+# Copy node_modules from deps stage (pnpm hoists to root)
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application code
 COPY apps/web ./apps/web
@@ -59,18 +59,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/web/public ./public
-
-# Set correct permissions for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Copy standalone output
+# Copy standalone output - this includes server.js at apps/web/server.js
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+
+# Copy public and static files to correct location for monorepo standalone
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
 
