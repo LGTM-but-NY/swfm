@@ -29,23 +29,25 @@ services:
 
   # MLflow Tracking Server with PostgreSQL Backend
   mlflow:
-    image: python:3.10-slim
+    build:
+      context: ./apps/mlflow
+      dockerfile: Dockerfile
     container_name: swfm-mlflow
     working_dir: /app
     ports:
       - "5000:5000"
+    environment:
+      - MLFLOW_DB_USER=${MLFLOW_DB_USER:-mlflow}
+      - MLFLOW_DB_PASSWORD=${MLFLOW_DB_PASSWORD:-mlflow}
+      - MLFLOW_DB_NAME=${MLFLOW_DB_NAME:-mlflow}
     volumes:
       - mlflow-artifacts:/app/mlartifacts
     command: >
-      sh -c "
-        apt-get update && apt-get install -y curl &&
-        pip install mlflow==2.9.0 psycopg2-binary &&
-        mlflow server 
-          --backend-store-uri postgresql://$${MLFLOW_DB_USER:-mlflow}:$${MLFLOW_DB_PASSWORD:-mlflow}@mlflow-postgres:5432/$${MLFLOW_DB_NAME:-mlflow} 
-          --default-artifact-root /app/mlartifacts 
-          --host 0.0.0.0 
-          --port 5000
-      "
+      mlflow server 
+        --backend-store-uri postgresql://$${MLFLOW_DB_USER}:$${MLFLOW_DB_PASSWORD}@mlflow-postgres:5432/$${MLFLOW_DB_NAME} 
+        --default-artifact-root /app/mlartifacts 
+        --host 0.0.0.0 
+        --port 5000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 10s
