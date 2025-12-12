@@ -28,6 +28,7 @@ interface StationDetailModalProps {
 export function StationDetailModal({ station, isOpen, onClose }: StationDetailModalProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loadingWeather, setLoadingWeather] = useState(false)
+  const [currentAccuracy, setCurrentAccuracy] = useState<number | null>(null)
 
   useEffect(() => {
     if (isOpen && station) {
@@ -196,22 +197,11 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
             <StationChart
               stationId={station.id}
               stationName={station.name}
+              onAccuracyCalculated={setCurrentAccuracy}
+              alarmLevel={station.alarm_level}
+              floodLevel={station.flood_level}
             />
           </div>
-
-          {/* Forecast Chart */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base sm:text-lg">10-Day Water Level Forecast</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ForecastChart
-                station={station.name}
-                stationId={station.id}
-                showMultiple={true}
-              />
-            </CardContent>
-          </Card>
 
           {/* Additional Info */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -226,8 +216,18 @@ export function StationDetailModal({ station, isOpen, onClose }: StationDetailMo
                     <span className="text-white">{station.station_code}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Accuracy:</span>
-                    <span className="text-white">±2mm</span>
+                    <span className="text-slate-400">Model Accuracy (RMSE):</span>
+                    <span className={
+                      currentAccuracy !== null
+                        ? currentAccuracy < 0.5
+                          ? "text-green-400 font-semibold"
+                          : currentAccuracy <= 0.7
+                          ? "text-yellow-400 font-semibold"
+                          : "text-red-400 font-semibold"
+                        : "text-white"
+                    }>
+                      {currentAccuracy !== null ? `±${currentAccuracy.toFixed(3)}m` : '±2mm'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Measurement Frequency:</span>

@@ -21,11 +21,13 @@ const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ss
 interface LeafletMapProps {
   stations: StationWithStatus[]
   onStationClick?: (station: StationWithStatus) => void
+  heightClassName?: string
 }
 
-export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
+export function LeafletMap({ stations, onStationClick, heightClassName }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [icons, setIcons] = useState<any>(null)
+  const containerHeightClassName = heightClassName ?? 'h-[500px]'
 
   useEffect(() => {
     setIsClient(true)
@@ -82,14 +84,14 @@ export function LeafletMap({ stations, onStationClick }: LeafletMapProps) {
 
   if (!isClient) {
     return (
-      <div className="w-full h-[500px] bg-slate-800 rounded-lg flex items-center justify-center">
+      <div className={`w-full ${containerHeightClassName} bg-slate-800 rounded-lg flex items-center justify-center`}>
         <div className="text-slate-400">Loading map...</div>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-[500px] rounded-lg overflow-hidden">
+    <div className={`w-full ${containerHeightClassName} rounded-lg overflow-hidden`}>
       <MapContainer
         center={[16.0, 104.0]} // Center on Mekong region
         zoom={6}

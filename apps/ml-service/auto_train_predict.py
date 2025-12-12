@@ -12,14 +12,47 @@ import json
 import time
 import schedule
 from datetime import datetime, timedelta
+import dotenv
+import os
 
 # Configuration
-ML_SERVICE_URL = "http://localhost:8000"
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8000")
 TRAIN_HORIZONS = [15, 30, 45, 60]  # Training horizons in minutes
 PREDICT_HORIZONS = [15, 30, 45, 60]  # Prediction horizons
-STATIONS_TO_PREDICT = [2, 3, 4, 5, 6, 8, 9]  # Active stations (excluding 1 and 7)
 TRAINING_PERIOD_DAYS = 30  # Use last 30 days of data
 RUN_INTERVAL_MINUTES = 60  # Run every 60 minutes
+
+def get_active_stations():
+    """Fetch stations from Supabase.
+
+    Note: the current DB schema may not have an `is_active` column.
+    In that case, treat all stations as active and just exclude known non-stations.
+    """
+    try:
+        from supabase import create_client
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        
+        if not supabase_url or not supabase_key:
+            print("⚠️  Supabase credentials not found, using default stations")
+            return [2, 3, 4, 5, 6, 8, 9, 15]
+        
+        supabase = create_client(supabase_url, supabase_key)
+        # Some environments don't have `stations.is_active`; select only stable columns.
+        response = supabase.table('stations').select('id, name').execute()
+        
+        # Treat all returned stations as active; exclude placeholders/non-stations.
+        excluded_station_ids = {0, 1, 7}
+        active_stations = [
+            s['id'] for s in response.data 
+            if s.get('id') is not None and s['id'] not in excluded_station_ids
+        ]
+        print(f"📍 Found {len(active_stations)} stations (excluded: {sorted(excluded_station_ids)})")
+        return active_stations
+        
+    except Exception as e:
+        print(f"⚠️  Error fetching stations: {e}, using default stations")
+        return [2, 3, 4, 5, 6, 8, 9, 15]
 
 def get_date_range():
     """Get dynamic date range (most recent 1 month)"""
@@ -98,10 +131,14 @@ def generate_predictions():
     """Generate predictions for all active stations"""
     print_header("PREDICTION: Generating Forecasts for All Stations")
     
+    # Get active stations dynamically
+    stations_to_predict = get_active_stations()
+    print(f"\n📍 Stations to process: {stations_to_predict}")
+    
     url = f"{ML_SERVICE_URL}/predict/generate-forecasts"
     
     results = []
-    for station_id in STATIONS_TO_PREDICT:
+    for station_id in stations_to_predict:
         print(f"\n🔮 Generating forecast for station {station_id}...")
         
         payload = {
