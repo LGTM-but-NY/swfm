@@ -138,6 +138,12 @@ serve(async (req: Request) => {
         }
 
         const { data } = json
+        
+        if (!data) {
+          errors.push({ station: station.station_code, error: 'No data returned from API' })
+          continue
+        }
+        
         const measuredAt = parseApiDate(data.date)
         
         if (!measuredAt) {
@@ -145,10 +151,10 @@ serve(async (req: Request) => {
           continue
         }
 
-        // Upsert measurement (unique constraint on station_id + measured_at)
+        // Insert measurement (ignore if same station_id + measured_at already exists)
         const { error: upsertError } = await supabase
           .from('station_measurements')
-          .upsert({
+          .insert({
             station_id: station.id,
             measured_at: measuredAt.toISOString(),
             water_level: toNumber(data.lastedWaterLevelM),
@@ -160,14 +166,20 @@ serve(async (req: Request) => {
             fetched_at: data.featched_UTC,
             source: 'automated',
             status: 'verified'
-          }, { 
-            onConflict: 'station_id,measured_at',
-            ignoreDuplicates: false 
           })
+          .select()
+          .maybeSingle()
 
         if (upsertError) {
-          console.error(`Error upserting for ${station.station_code}:`, upsertError)
-          errors.push({ station: station.station_code, error: upsertError.message })
+          // Ignore duplicate key errors (measurement already exists)
+          if (upsertError.message.includes('duplicate key') || 
+              upsertError.message.includes('unique constraint')) {
+            console.log(`⊘ Skipped duplicate: ${station.name}`)
+            results.push({ station: station.station_code, success: true })
+          } else {
+            console.error(`Error inserting for ${station.station_code}:`, upsertError)
+            errors.push({ station: station.station_code, error: upsertError.message })
+          }
         } else {
           results.push({ station: station.station_code, success: true })
           console.log(`✓ Synced: ${station.name}`)
